@@ -88,110 +88,116 @@ describe('indexeddb-promised', function() {
 
   describe('#constructor', function() {
     it('should create an object that has a database', function() {
-      var indexeddb = new IndexedDb('testEmptyDb');
-      should.exist(indexeddb);
-      indexeddb.should.have.property('getDb');
-      indexeddb.getDb.should.be.a('function');
+      setTimeout(function() {
+        var indexeddb = new IndexedDb('testEmptyDb');
+        should.exist(indexeddb);
+        indexeddb.should.have.property('getDb');
+        indexeddb.getDb.should.be.a('function');
 
-      var hasObjectStore = function(db) {
-        should.exist(db);
-        db.should.have.property('createObjectStore');
-        //done();
-      }
+        var hasObjectStore = function(db) {
+          should.exist(db);
+          db.should.have.property('createObjectStore');
+          //done();
+        }
 
-      return indexeddb.getDb()
-      .then(hasObjectStore)
-      .thenResolve("Create DB")
-      .then(increaseTestCount)
-      .then(console.log)
-      .thenResolve(indexeddb)
-      .then(function(indexeddb) {
-        return indexeddb.cleanup();
-      });
+        return indexeddb.getDb()
+        .then(hasObjectStore)
+        .thenResolve("Create DB")
+        .then(increaseTestCount)
+        .then(console.log)
+        .thenResolve(indexeddb)
+        .then(function(indexeddb) {
+          return indexeddb.cleanup();
+        });
+      }, 0);
     });
 
     it('should create an objectStore in the database', function() {
-      var indexeddb = createDbWithTestObjStore();
-      var db = indexeddb.getDb();
+      setTimeout(function() {
+        var indexeddb = createDbWithTestObjStore();
+        var db = indexeddb.getDb();
 
-      var hasTestObjStore = function(db) {
-        //console.log("objectStoreNames: " + JSON.stringify(db.objectStoreNames, null, 2));
-        db.objectStoreNames.should.containOneLike('testObjStore');
-        //done();
-      };
+        var hasTestObjStore = function(db) {
+          //console.log("objectStoreNames: " + JSON.stringify(db.objectStoreNames, null, 2));
+          db.objectStoreNames.should.containOneLike('testObjStore');
+          //done();
+        };
 
-      return db.then(hasTestObjStore)
-      .thenResolve("Create ObjectStore")
-      .then(increaseTestCount)
-      .then(console.log)
-      .thenResolve(indexeddb)
-      .then(function(indexeddb) {
-        return indexeddb.cleanup();
-      });
+        return db.then(hasTestObjStore)
+        .thenResolve("Create ObjectStore")
+        .then(increaseTestCount)
+        .then(console.log)
+        .thenResolve(indexeddb)
+        .then(function(indexeddb) {
+          return indexeddb.cleanup();
+        });
+      }, 0);
     });
   });
 
   describe('#execTransaction()', function() {
     it('should execute a transaction that creates a record, gets the record, and then deletes the record', function() {
-      console.log(testCount+': execTransaction started.');
-      var testRecord = {testKey: "testValue"};
-      var indexeddb = createDbWithTestObjStore();
-      console.log(testCount+': database created.');
+      setTimeout(function() {
+        console.log(testCount+': execTransaction started.');
+        var testRecord = {testKey: "testValue"};
+        var indexeddb = createDbWithTestObjStore();
+        console.log(testCount+': database created.');
 
-      var addRecord = function(tx) {
-        console.log('adding record...');
-        var objectStore = tx.objectStore("testObjStore");
-        var request = objectStore.add(testRecord);
-        return request;
-      };
-
-      var getRecord = function(tx) {
-        console.log('reading...');
-        var objectStore = tx.objectStore("testObjStore");
-        var records = [];
-
-        objectStore.openCursor().onsuccess = function(event) {
-          var cursor = event.target.result;
-          var result;
-          if (cursor) {
-            var record = {};
-            record.key = cursor.key;
-            record.value = cursor.value;
-            //console.log('found record: '+JSON.stringify(record, null, 2));
-            records.push(record);
-            cursor.continue();
-          }
+        var addRecord = function(tx) {
+          console.log('adding record...');
+          var objectStore = tx.objectStore("testObjStore");
+          var request = objectStore.add(testRecord);
+          return request;
         };
 
-        return records;
-      };
+        var getRecord = function(tx) {
+          console.log('reading...');
+          var objectStore = tx.objectStore("testObjStore");
+          var records = [];
 
-      var deleteRecord = function(tx) {
-        console.log('deleting record...');
-        var objectStore = tx.objectStore("testObjStore");
-        var request = objectStore.delete(2);
-        return request;
-      };
+          objectStore.openCursor().onsuccess = function(event) {
+            var cursor = event.target.result;
+            var result;
+            if (cursor) {
+              var record = {};
+              record.key = cursor.key;
+              record.value = cursor.value;
+              //console.log('found record: '+JSON.stringify(record, null, 2));
+              records.push(record);
+              cursor.continue();
+            }
+          };
 
-      console.log(testCount+': executing transaction now.');
-      return indexeddb.execTransaction([addRecord, getRecord, deleteRecord],
-        ['testObjStore'], "readwrite")
-      .tap(JSON.stringify)
-      .tap(console.log)
-      .then(function(results) {
-        results.should.have.length(3);
-        results[0].should.be.a('number');
+          return records;
+        };
 
-        results[1][0].should.eql({key: 1, value: {testKey: "testValue"}});
-        //done();
-      })
-      .thenResolve("Execute transaction")
-      .then(increaseTestCount)
-      .then(console.log)
-      .thenResolve(indexeddb)
-      .then(function(indexeddb) {
-        return indexeddb.cleanup();
-      });
+        var deleteRecord = function(tx) {
+          console.log('deleting record...');
+          var objectStore = tx.objectStore("testObjStore");
+          var request = objectStore.delete(2);
+          return request;
+        };
+
+        console.log(testCount+': executing transaction now.');
+        return indexeddb.execTransaction([addRecord, getRecord, deleteRecord],
+          ['testObjStore'], "readwrite")
+        .tap(JSON.stringify)
+        .tap(console.log)
+        .then(function(results) {
+          results.should.have.length(3);
+          results[0].should.be.a('number');
+
+          results[1][0].should.eql({key: 1, value: {testKey: "testValue"}});
+          //done();
+        })
+        .thenResolve("Execute transaction")
+        .then(increaseTestCount)
+        .then(console.log)
+        .thenResolve(indexeddb)
+        .then(function(indexeddb) {
+          return indexeddb.cleanup();
+        });
+      }, 0);
     });
   });
 
