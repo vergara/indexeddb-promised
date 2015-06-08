@@ -1,0 +1,32 @@
+{
+  "name": "indexeddb-promised",
+  "version": "1.0.0",
+  "description": "Library for indexeddb that uses promises.",
+  "main": "indexeddb-promised.js",
+  "scripts": {
+    "test": "karma start"
+  },
+  "keywords": [
+    "indexeddb",
+    "promises",
+    "angularjs"
+  ],
+  "author": "Cristobal Vergara Niedermayr <cristobal.vergara.niedermayr@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "chai": "^2.3.0",
+    "chai-fuzzy": "^1.5.0",
+    "chai-things": "^0.2.0",
+    "gulp": "^3.8.11",
+    "karma": "^0.12.33",
+    "karma-browserify": "^4.2.1",
+    "karma-chrome-launcher": "^0.1.12",
+    "karma-firefox-launcher": "^0.1.6",
+    "karma-mocha": "^0.1.10",
+    "mocha": "^2.2.5",
+    "underscore": "^1.8.3"
+  },
+  "dependencies": {
+    "q": "^1.4.1"
+  }
+}
