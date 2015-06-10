@@ -23,12 +23,8 @@ module.exports = function(dbName, version, doUpgrade) {
     openDbDeferred.reject("Failed to open indexeddb: "+event.target.errorCode+".");
   };
   request.onsuccess = function(event) {
-    console.log('onsuccess: successfully created db for indexeddb object.');
-    openDbDeferred.resolve(event.target.result);
-  };
-  request.oncomplete = function(event) {
-    console.log('oncomplete: successfully created db for indexeddb object.');
-    openDbDeferred.resolve(event.target.result);
+    //console.log('onsuccess: successfully created db for indexeddb object.');
+    openDbDeferred.resolve(this.result);
   };
 
   this.getDb = function() {
@@ -37,19 +33,16 @@ module.exports = function(dbName, version, doUpgrade) {
 
   this.cleanup = function() {
     var cleanDB = function() {
-      console.log('deleting reference to db...');
       db.done();
       db = null
-      console.log('db: '+JSON.stringify(db));
       return null;
     }
-    return db.then(cleanDB).done();
+    return db.then(cleanDB);
   }
 
   this.execTransaction = function(operations, objectStores, mode) {
 
     var execute = function(db) {
-      console.log('in execute');
       var queue = Q([]);
       var tx = db.transaction(objectStores, mode);
 
@@ -84,19 +77,8 @@ module.exports = function(dbName, version, doUpgrade) {
       return Q.all(queue);
     };
 
-    console.log('in execTransaction()');
     return db
-    .tap(function() {
-      console.log('db resolved.');
-    })
     .then(execute);
-  };
-
-  this.deleteDatabase = function() {
-    var deleteDB = function(db) {
-      return db.deleteDatabase(dbName).onsuccess = function() {};
-    };
-    return db.then(deleteDB);
   };
 
   return this;
