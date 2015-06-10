@@ -140,8 +140,9 @@ describe('indexeddb-promised', function() {
       var transactions = [addRecord, getRecord, deleteRecord];
       return indexeddb.execTransaction(transactions,
         ['testObjStore'], "readwrite")
-      .tap(JSON.stringify)
-      .tap(log)
+      .tap(function(results) {
+        log(JSON.stringify(results));
+      })
       .then(function(results) {
         results.should.have.length(transactions.length);
         results[0].should.be.a('number');
