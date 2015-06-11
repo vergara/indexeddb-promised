@@ -2,7 +2,7 @@ var chai = require("chai");
 var should = chai.should();
 chai.use(require('chai-fuzzy'));
 chai.use(require('chai-things'));
-var IndexedDb = require("../js/indexeddb-promised");
+var Builder = require("../js/indexeddb-promised");
 var Q = require('q');
 
 var testCount = 1;
@@ -44,7 +44,11 @@ describe('indexeddb-promised', function() {
       db.createObjectStore('testObjStore', { autoIncrement : true });
     };
 
-    var indexeddb = new IndexedDb('testdb' + testCount, 1, doUpgrade);
+    var builder = new Builder('testdb' + testCount);
+    builder.setVersion(1);
+    builder.setDoUpgrade(doUpgrade);
+
+    var indexeddb = builder.build();
     log('created indexeddb object.');
 
     return indexeddb;
@@ -92,6 +96,47 @@ describe('indexeddb-promised', function() {
 
       return db.then(hasTestObjStore)
       .thenResolve("COMPLETED Create ObjectStore test.")
+      .then(log);
+    });
+
+    it('should create an objectStore with autoIncrement key in the database without upgrade function', function() {
+      log('STARTING Create ObjectStore with autoIncrement key without upgrade function test.');
+      var builder = new Builder('testdb2_' + testCount)
+      .setVersion(1)
+      .addObjectStore({name: 'testObjStore', keyType: {autoIncrement : true}});
+
+      var db = builder.build().getDb();
+
+      var hasTestObjStore = function(db) {
+        //log("objectStoreNames: " + JSON.stringify(db.objectStoreNames, null, 2));
+        db.objectStoreNames.should.containOneLike('testObjStore');
+      };
+
+      return db.then(hasTestObjStore)
+      .thenResolve("COMPLETED Create ObjectStore with autoIncrement key without upgrade function test.")
+      .then(log);
+    });
+
+    it('should create an objectStore with keyPath key in the database without upgrade function', function() {
+      log('STARTING Create ObjectStore with keyPath key without upgrade function test.');
+      var builder = new Builder('testdb2_' + testCount)
+      .setVersion(1)
+      .addObjectStore({name: 'testObjStore1', keyType: {autoIncrement: true}})
+      .addObjectStore({name: 'testObjStore2', keyType: {keyPath: 'id'}})
+      .addObjectStore({name: 'testObjStore3', keyType: {autoIncrement: 'id'}})
+      .setDebug();
+
+      var db = builder.build().getDb();
+
+      var hasTestObjStore = function(db) {
+        //log("objectStoreNames: " + JSON.stringify(db.objectStoreNames, null, 2));
+        db.objectStoreNames.should.containOneLike('testObjStore1');
+        db.objectStoreNames.should.containOneLike('testObjStore2');
+        db.objectStoreNames.should.containOneLike('testObjStore3');
+      };
+
+      return db.then(hasTestObjStore)
+      .thenResolve("COMPLETED Create ObjectStore with keyPath key without upgrade function test.")
       .then(log);
     });
   });
@@ -153,4 +198,11 @@ describe('indexeddb-promised', function() {
       .then(log);
     });
   });
+
+  // describe('CRUD operations', function() {
+  //   it('should add a record in the db', function() {
+  //     var testRecord = {testKey: "testValue"};
+  //     indexeddb.add()
+  //   });
+  // });
 });

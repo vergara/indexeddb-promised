@@ -1,4 +1,52 @@
-module.exports = function(dbName, version, doUpgrade) {
+module.exports = function(dbName) {
+    var version;
+    var doUpgrade;
+    var objectStores;
+    var debug = false;
+
+    this.setDebug = function() {
+      debug = true;
+      return this;
+    };
+
+    this.setVersion = function(pVersion) {
+      version = pVersion;
+      return this;
+    };
+
+    this.setDoUpgrade = function(pDoUpgrade) {
+      doUpgrade = pDoUpgrade;
+      return this;
+    };
+
+    this.addObjectStore = function(name) {
+      if(!objectStores) {
+        objectStores = [];
+      }
+
+      objectStores.push(name);
+      return this;
+    };
+
+    this.build = function() {
+      if(!doUpgrade) {
+        doUpgrade = function(db) {
+          objectStores.forEach(function(objStore) {
+            db.createObjectStore(objStore.name, objStore.keyType);
+          });
+        };
+      }
+      var indexeddb = new Indexeddb(dbName, version, doUpgrade);
+      if(debug) {
+        window['indexeddbPromised_'+dbName] = indexeddb;
+      }
+      return indexeddb;
+    };
+
+    return this;
+  };
+
+var Indexeddb = function(dbName, version, doUpgrade) {
   var Q = require('q');
   var openDbDeferred = Q.defer();
 
