@@ -204,10 +204,6 @@ describe('indexeddb-promised', function() {
     it('should add a record in the db', function() {
       log('STARTING add test');
       var testRecord = {testKey: "testValue"};
-      var builder = new Builder('testdb2_' + testCount)
-      .setVersion(1)
-      .addObjectStore({name: 'testObjStore', keyType: {autoIncrement : true}});
-      var indexeddb = builder.build();
 
       var test = function(resultKey) {
         resultKey.should.eql(1);
@@ -225,10 +221,6 @@ describe('indexeddb-promised', function() {
     it('should delete a record in the db', function() {
       log('STARTING delete test');
       var testRecord = {testKey: "testValue"};
-      var builder = new Builder('testdb2_' + testCount)
-      .setVersion(1)
-      .addObjectStore({name: 'testObjStore', keyType: {autoIncrement : true}});
-      var indexeddb = builder.build();
 
       var testAdded = function(resultKey) {
         resultKey.should.eql(1);
@@ -259,10 +251,6 @@ describe('indexeddb-promised', function() {
       log('STARTING update test');
       var testRecord = {testKey: "testValue"};
       var updatedRecord = {testKey: "updatedValue"};
-      var builder = new Builder('testdb2_' + testCount)
-      .setVersion(1)
-      .addObjectStore({name: 'testObjStore', keyType: {autoIncrement : true}});
-      var indexeddb = builder.build();
 
       var testAdded = function(resultKey) {
         resultKey.should.eql(1);
@@ -296,26 +284,26 @@ describe('indexeddb-promised', function() {
       var builder = new Builder('testdb2_' + testCount)
       .setVersion(1)
       .addObjectStore({name: 'testObjStore', keyType: {keyPath : 'id'}});
-      var indexeddb = builder.build();
+      var indexeddb2 = builder.build();
 
       var testAdded = function(resultKey) {
         resultKey.should.eql(1);
-        return indexeddb.get('testObjStore', 1).then(function(result) {
+        return indexeddb2.get('testObjStore', 1).then(function(result) {
           result.should.eql(testRecord);
         });
       };
 
       var updateRecord = function() {
-        return indexeddb.put('testObjStore', updatedRecord);
+        return indexeddb2.put('testObjStore', updatedRecord);
       }
 
       var testUpdated = function() {
-        return indexeddb.get('testObjStore', 1).then(function(result) {
+        return indexeddb2.get('testObjStore', 1).then(function(result) {
           result.should.eql(updatedRecord);
         });
       };
 
-      return indexeddb.add('testObjStore', testRecord)
+      return indexeddb2.add('testObjStore', testRecord)
       .then(testAdded)
       .then(updateRecord)
       .then(testUpdated)
@@ -330,10 +318,10 @@ describe('indexeddb-promised', function() {
       var builder = new Builder('testdb2_' + testCount)
       .setVersion(1)
       .addObjectStore({name: 'testObjStore', keyType: {keyPath : 'id'}});
-      var indexeddb = builder.build();
+      var indexeddb2 = builder.build();
 
       var test = function() {
-        return indexeddb.getAll('testObjStore')
+        return indexeddb2.getAll('testObjStore')
         .tap(function(result) {
           log('getAll(): ' + JSON.stringify(result));
         })
@@ -348,7 +336,7 @@ describe('indexeddb-promised', function() {
       var addPromises = [];
       for(var i=1;i <= 5;i++) {
         addPromises.push(
-          indexeddb.add('testObjStore', {id: i, testKey: "testValue" + i})
+          indexeddb2.add('testObjStore', {id: i, testKey: "testValue" + i})
         );
       }
 
