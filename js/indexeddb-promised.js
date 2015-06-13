@@ -246,5 +246,27 @@ var Indexeddb = function(dbName, version, doUpgrade) {
     return defer.promise;
   };
 
+  this.getAllKeys = function(store) {
+    var defer = Q.defer();
+    var result = [];
+
+    db.then(function(db) {
+      db.transaction(store)
+      .objectStore(store)
+      .openCursor()
+      .onsuccess = function(event) {
+        var cursor = event.target.result;
+        if(cursor) {
+          result.push(cursor.key);
+          cursor.continue();
+        } else {
+          defer.resolve(result);
+        }
+      };
+    });
+
+    return defer.promise;
+  };
+
   return this;
 }
