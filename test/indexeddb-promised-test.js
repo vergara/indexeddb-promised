@@ -322,5 +322,41 @@ describe('indexeddb-promised', function() {
       .thenResolve("COMPLETED update using keyPath test.")
       .then(log);
     });
+
+    it('should get all records in the database', function() {
+      log('STARTING get all records in the database test');
+      var testRecord = {id: 1, testKey: "testValue"};
+      var updatedRecord = {id: 1, testKey: "updatedValue"};
+      var builder = new Builder('testdb2_' + testCount)
+      .setVersion(1)
+      .addObjectStore({name: 'testObjStore', keyType: {keyPath : 'id'}});
+      var indexeddb = builder.build();
+
+      var test = function() {
+        return indexeddb.getAll('testObjStore')
+        .tap(function(result) {
+          log('getAll(): ' + JSON.stringify(result));
+        })
+        .then(function(result) {
+          result.should.have.length(5);
+          for(var i=1;i <= 5;i++) {
+            result[i-1].should.eql({id: i, testKey: "testValue" + i});
+          }
+        });
+      };
+
+      var addPromises = [];
+      for(var i=1;i <= 5;i++) {
+        addPromises.push(
+          indexeddb.add('testObjStore', {id: i, testKey: "testValue" + i})
+        );
+      }
+
+      return Q.all(addPromises)
+      .then(test)
+      .thenResolve("COMPLETED get all records in the database test.")
+      .then(log);
+    });
+
   });
 });
