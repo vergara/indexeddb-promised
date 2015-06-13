@@ -1,5 +1,6 @@
 var chai = require("chai");
 var should = chai.should();
+var expect = chai.expect;
 chai.use(require('chai-fuzzy'));
 chai.use(require('chai-things'));
 var Builder = require("../js/indexeddb-promised");
@@ -199,10 +200,127 @@ describe('indexeddb-promised', function() {
     });
   });
 
-  // describe('CRUD operations', function() {
-  //   it('should add a record in the db', function() {
-  //     var testRecord = {testKey: "testValue"};
-  //     indexeddb.add()
-  //   });
-  // });
+  describe('CRUD operations', function() {
+    it('should add a record in the db', function() {
+      log('STARTING add test');
+      var testRecord = {testKey: "testValue"};
+      var builder = new Builder('testdb2_' + testCount)
+      .setVersion(1)
+      .addObjectStore({name: 'testObjStore', keyType: {autoIncrement : true}});
+      var indexeddb = builder.build();
+
+      var test = function(resultKey) {
+        resultKey.should.eql(1);
+        return indexeddb.get('testObjStore', 1).then(function(result) {
+          result.should.eql(testRecord);
+        });
+      };
+
+      return indexeddb.add('testObjStore', testRecord)
+      .then(test)
+      .thenResolve("COMPLETED add test.")
+      .then(log);
+    });
+
+    it('should delete a record in the db', function() {
+      log('STARTING delete test');
+      var testRecord = {testKey: "testValue"};
+      var builder = new Builder('testdb2_' + testCount)
+      .setVersion(1)
+      .addObjectStore({name: 'testObjStore', keyType: {autoIncrement : true}});
+      var indexeddb = builder.build();
+
+      var testAdded = function(resultKey) {
+        resultKey.should.eql(1);
+        return indexeddb.get('testObjStore', 1).then(function(result) {
+          result.should.eql(testRecord);
+        });
+      };
+
+      var deleteRecord = function() {
+        return indexeddb.delete('testObjStore', 1);
+      }
+
+      var testDeleted = function() {
+        return indexeddb.get('testObjStore', 1).then(function(result) {
+          expect(result).to.not.be.ok;
+        });
+      };
+
+      return indexeddb.add('testObjStore', testRecord)
+      .then(testAdded)
+      .then(deleteRecord)
+      .then(testDeleted)
+      .thenResolve("COMPLETED delete test.")
+      .then(log);
+    });
+
+    it('should update a record in the db', function() {
+      log('STARTING update test');
+      var testRecord = {testKey: "testValue"};
+      var updatedRecord = {testKey: "updatedValue"};
+      var builder = new Builder('testdb2_' + testCount)
+      .setVersion(1)
+      .addObjectStore({name: 'testObjStore', keyType: {autoIncrement : true}});
+      var indexeddb = builder.build();
+
+      var testAdded = function(resultKey) {
+        resultKey.should.eql(1);
+        return indexeddb.get('testObjStore', 1).then(function(result) {
+          result.should.eql(testRecord);
+        });
+      };
+
+      var updateRecord = function() {
+        return indexeddb.put('testObjStore', updatedRecord, 1);
+      }
+
+      var testUpdated = function() {
+        return indexeddb.get('testObjStore', 1).then(function(result) {
+          result.should.eql(updatedRecord);
+        });
+      };
+
+      return indexeddb.add('testObjStore', testRecord)
+      .then(testAdded)
+      .then(updateRecord)
+      .then(testUpdated)
+      .thenResolve("COMPLETED update test.")
+      .then(log);
+    });
+
+    it('should update a record in the db using keyPath', function() {
+      log('STARTING update using keyPath test');
+      var testRecord = {id: 1, testKey: "testValue"};
+      var updatedRecord = {id: 1, testKey: "updatedValue"};
+      var builder = new Builder('testdb2_' + testCount)
+      .setVersion(1)
+      .addObjectStore({name: 'testObjStore', keyType: {keyPath : 'id'}});
+      var indexeddb = builder.build();
+
+      var testAdded = function(resultKey) {
+        resultKey.should.eql(1);
+        return indexeddb.get('testObjStore', 1).then(function(result) {
+          result.should.eql(testRecord);
+        });
+      };
+
+      var updateRecord = function() {
+        return indexeddb.put('testObjStore', updatedRecord);
+      }
+
+      var testUpdated = function() {
+        return indexeddb.get('testObjStore', 1).then(function(result) {
+          result.should.eql(updatedRecord);
+        });
+      };
+
+      return indexeddb.add('testObjStore', testRecord)
+      .then(testAdded)
+      .then(updateRecord)
+      .then(testUpdated)
+      .thenResolve("COMPLETED update using keyPath test.")
+      .then(log);
+    });
+  });
 });

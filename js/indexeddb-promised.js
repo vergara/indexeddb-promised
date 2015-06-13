@@ -129,5 +129,100 @@ var Indexeddb = function(dbName, version, doUpgrade) {
     .then(execute);
   };
 
+  this.add = function(store, record, key) {
+    var deferTransaction = Q.defer();
+    var deferAdd = Q.defer();
+    var resultAdd;
+
+    db.then(function(db) {
+      return db.transaction(store, "readwrite");
+    })
+    .then(function(transaction) {
+      transaction.oncomplete = function(event) {
+        deferTransaction.resolve(resultAdd);
+      };
+
+      transaction.onerror = function(event) {
+        defer.reject(event.target.errorCode);
+      };
+
+      var objectStore = transaction.objectStore(store);
+
+      var request = objectStore.add(record, key);
+      request.onsuccess = function(event) {
+        resultAdd = event.target.result;
+        deferAdd.resolve(event.target.result);
+      };
+
+    });
+
+    return deferTransaction.promise;
+  }
+
+  this.get = function(store, key) {
+    var getDefer = Q.defer();
+
+    return db.then(function(db) {
+      var request = db.transaction([store]).objectStore(store).get(key);
+      request.onerror = function(event) {
+        getDefer.reject(event.target.errorCode);
+      };
+      request.onsuccess = function(event) {
+        getDefer.resolve(event.target.result);
+      };
+
+      return getDefer.promise;
+    });
+  };
+
+  this.delete = function(store, key) {
+    var defer = Q.defer();
+
+    return db.then(function(db) {
+      var request = db.transaction([store], 'readwrite')
+      .objectStore(store)
+      .delete(key);
+
+      request.onerror = function(event) {
+        defer.reject(event.target.errorCode);
+      };
+      request.onsuccess = function(event) {
+        defer.resolve(event.target.result);
+      };
+
+      return defer.promise;
+    });
+  };
+
+  this.put = function(store, record, key) {
+    var deferTransaction = Q.defer();
+    var deferPut = Q.defer();
+    var resultPut;
+
+    db.then(function(db) {
+      return db.transaction(store, "readwrite");
+    })
+    .then(function(transaction) {
+      transaction.oncomplete = function(event) {
+        deferTransaction.resolve(resultPut);
+      };
+
+      transaction.onerror = function(event) {
+        defer.reject(event.target.errorCode);
+      };
+
+      var objectStore = transaction.objectStore(store);
+
+      var request = objectStore.put(record, key);
+      request.onsuccess = function(event) {
+        resultPut = event.target.result;
+        deferPut.resolve(event.target.result);
+      };
+
+    });
+
+    return deferTransaction.promise;
+  }
+
   return this;
 }
