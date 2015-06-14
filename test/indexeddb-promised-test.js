@@ -203,185 +203,6 @@ describe('indexeddb-promised', function() {
   describe('CRUD operations', function() {
     it('should add a record in the db', function() {
       log('STARTING add test');
-      var testRecord = {testKey: "testValue"};
-
-      var test = function(resultKey) {
-        resultKey.should.eql(1);
-        return indexeddb.get('testObjStore', 1).then(function(result) {
-          result.should.eql(testRecord);
-        });
-      };
-
-      return indexeddb.add('testObjStore', testRecord)
-      .then(test)
-      .thenResolve("COMPLETED add test.")
-      .then(log);
-    });
-
-    it('should delete a record in the db', function() {
-      log('STARTING delete test');
-      var testRecord = {testKey: "testValue"};
-
-      var testAdded = function(resultKey) {
-        resultKey.should.eql(1);
-        return indexeddb.get('testObjStore', 1).then(function(result) {
-          result.should.eql(testRecord);
-        });
-      };
-
-      var deleteRecord = function() {
-        return indexeddb.delete('testObjStore', 1);
-      }
-
-      var testDeleted = function() {
-        return indexeddb.get('testObjStore', 1).then(function(result) {
-          expect(result).to.not.be.ok;
-        });
-      };
-
-      return indexeddb.add('testObjStore', testRecord)
-      .then(testAdded)
-      .then(deleteRecord)
-      .then(testDeleted)
-      .thenResolve("COMPLETED delete test.")
-      .then(log);
-    });
-
-    it('should update a record in the db', function() {
-      log('STARTING update test');
-      var testRecord = {testKey: "testValue"};
-      var updatedRecord = {testKey: "updatedValue"};
-
-      var testAdded = function(resultKey) {
-        resultKey.should.eql(1);
-        return indexeddb.get('testObjStore', 1).then(function(result) {
-          result.should.eql(testRecord);
-        });
-      };
-
-      var updateRecord = function() {
-        return indexeddb.put('testObjStore', updatedRecord, 1);
-      }
-
-      var testUpdated = function() {
-        return indexeddb.get('testObjStore', 1).then(function(result) {
-          result.should.eql(updatedRecord);
-        });
-      };
-
-      return indexeddb.add('testObjStore', testRecord)
-      .then(testAdded)
-      .then(updateRecord)
-      .then(testUpdated)
-      .thenResolve("COMPLETED update test.")
-      .then(log);
-    });
-
-    it('should update a record in the db using keyPath', function() {
-      log('STARTING update using keyPath test');
-      var testRecord = {id: 1, testKey: "testValue"};
-      var updatedRecord = {id: 1, testKey: "updatedValue"};
-      var builder = new Builder('testdb2_' + testCount)
-      .setVersion(1)
-      .addObjectStore({name: 'testObjStore', keyType: {keyPath : 'id'}});
-      var indexeddb2 = builder.build();
-
-      var testAdded = function(resultKey) {
-        resultKey.should.eql(1);
-        return indexeddb2.get('testObjStore', 1).then(function(result) {
-          result.should.eql(testRecord);
-        });
-      };
-
-      var updateRecord = function() {
-        return indexeddb2.put('testObjStore', updatedRecord);
-      }
-
-      var testUpdated = function() {
-        return indexeddb2.get('testObjStore', 1).then(function(result) {
-          result.should.eql(updatedRecord);
-        });
-      };
-
-      return indexeddb2.add('testObjStore', testRecord)
-      .then(testAdded)
-      .then(updateRecord)
-      .then(testUpdated)
-      .thenResolve("COMPLETED update using keyPath test.")
-      .then(log);
-    });
-
-    it('should get all records in the database', function() {
-      log('STARTING get all records in the database test');
-      var builder = new Builder('testdb2_' + testCount)
-      .setVersion(1)
-      .addObjectStore({name: 'testObjStore', keyType: {keyPath : 'id'}});
-      var indexeddb2 = builder.build();
-
-      var test = function() {
-        return indexeddb2.getAll('testObjStore')
-        .tap(function(result) {
-          log('getAll(): ' + JSON.stringify(result));
-        })
-        .then(function(result) {
-          result.should.have.length(5);
-          for(var i=1;i <= 5;i++) {
-            result[i-1].should.eql({id: i, testKey: "testValue" + i});
-          }
-        });
-      };
-
-      var addPromises = [];
-      for(var i=1;i <= 5;i++) {
-        addPromises.push(
-          indexeddb2.add('testObjStore', {id: i, testKey: "testValue" + i})
-        );
-      }
-
-      return Q.all(addPromises)
-      .then(test)
-      .thenResolve("COMPLETED get all records in the database test.")
-      .then(log);
-    });
-
-    it('should get all keys in the database', function() {
-      log('STARTING get all keys in the database test');
-      var builder = new Builder('testdb2_' + testCount)
-      .setVersion(1)
-      .addObjectStore({name: 'testObjStore', keyType: {keyPath : 'id'}});
-      var indexeddb2 = builder.build();
-
-      var test = function() {
-        return indexeddb2.getAllKeys('testObjStore')
-        .tap(function(result) {
-          log('getAllKeys(): ' + JSON.stringify(result));
-        })
-        .then(function(result) {
-          result.should.have.length(5);
-          for(var i=1;i <= 5;i++) {
-            result[i-1].should.eql(i);
-          }
-        });
-      };
-
-      var addPromises = [];
-      for(var i=1;i <= 5;i++) {
-        addPromises.push(
-          indexeddb2.add('testObjStore', {id: i, testKey: "testValue" + i})
-        );
-      }
-
-      return Q.all(addPromises)
-      .then(test)
-      .thenResolve("COMPLETED get all keys in the database test.")
-      .then(log);
-    });
-
-  });
-
-  describe('CRUD operations main interface', function() {
-    it('main interface: should add a record in the db', function() {
-      log('STARTING main interface add test');
 
       var testRecord = {testKey: "testValue"};
 
@@ -394,12 +215,12 @@ describe('indexeddb-promised', function() {
 
       return indexeddb.testObjStore.add(testRecord)
       .then(test)
-      .thenResolve("COMPLETED main interface add test.")
+      .thenResolve("COMPLETED add test.")
       .then(log);
     });
 
-    it('main interface: should delete a record in the db', function() {
-      log('STARTING main interface delete test');
+    it('should delete a record in the db', function() {
+      log('STARTING delete test');
       var testRecord = {testKey: "testValue"};
 
       var testAdded = function(resultKey) {
@@ -423,12 +244,12 @@ describe('indexeddb-promised', function() {
       .then(testAdded)
       .then(deleteRecord)
       .then(testDeleted)
-      .thenResolve("COMPLETED main interface delete test.")
+      .thenResolve("COMPLETED delete test.")
       .then(log);
     });
 
-    it('main interface: should update a record in the db', function() {
-      log('STARTING main interface update test');
+    it('should update a record in the db', function() {
+      log('STARTING update test');
       var testRecord = {testKey: "testValue"};
       var updatedRecord = {testKey: "updatedValue"};
 
@@ -453,12 +274,12 @@ describe('indexeddb-promised', function() {
       .then(testAdded)
       .then(updateRecord)
       .then(testUpdated)
-      .thenResolve("COMPLETED main interface update test.")
+      .thenResolve("COMPLETED update test.")
       .then(log);
     });
 
-    it('main interface: should update a record in the db using keyPath', function() {
-      log('STARTING main interface update using keyPath test');
+    it('should update a record in the db using keyPath', function() {
+      log('STARTING update using keyPath test');
       var testRecord = {id: 1, testKey: "testValue"};
       var updatedRecord = {id: 1, testKey: "updatedValue"};
       var builder = new Builder('testdb2_' + testCount)
@@ -468,31 +289,31 @@ describe('indexeddb-promised', function() {
 
       var testAdded = function(resultKey) {
         resultKey.should.eql(1);
-        return indexeddb2.get('testObjStore', 1).then(function(result) {
+        return indexeddb2.testObjStore.get(1).then(function(result) {
           result.should.eql(testRecord);
         });
       };
 
       var updateRecord = function() {
-        return indexeddb2.put('testObjStore', updatedRecord);
+        return indexeddb2.testObjStore.put(updatedRecord);
       }
 
       var testUpdated = function() {
-        return indexeddb2.get('testObjStore', 1).then(function(result) {
+        return indexeddb2.testObjStore.get(1).then(function(result) {
           result.should.eql(updatedRecord);
         });
       };
 
-      return indexeddb2.add('testObjStore', testRecord)
+      return indexeddb2.testObjStore.add(testRecord)
       .then(testAdded)
       .then(updateRecord)
       .then(testUpdated)
-      .thenResolve("COMPLETED main interface update using keyPath test.")
+      .thenResolve("COMPLETED update using keyPath test.")
       .then(log);
     });
 
-    it('main interface: should get all records in the database', function() {
-      log('STARTING main interface get all records in the database test');
+    it('should get all records in the database', function() {
+      log('STARTING get all records in the database test');
       var builder = new Builder('testdb2_' + testCount)
       .setVersion(1)
       .addObjectStore({name: 'testObjStore', keyType: {keyPath : 'id'}});
@@ -520,12 +341,12 @@ describe('indexeddb-promised', function() {
 
       return Q.all(addPromises)
       .then(test)
-      .thenResolve("COMPLETED main interface get all records in the database test.")
+      .thenResolve("COMPLETED get all records in the database test.")
       .then(log);
     });
 
-    it('main interface: should get all keys in the database', function() {
-      log('STARTING main interface get all keys in the database test');
+    it('should get all keys in the database', function() {
+      log('STARTING get all keys in the database test');
       var builder = new Builder('testdb2_' + testCount)
       .setVersion(1)
       .addObjectStore({name: 'testObjStore', keyType: {keyPath : 'id'}});
@@ -553,7 +374,7 @@ describe('indexeddb-promised', function() {
 
       return Q.all(addPromises)
       .then(test)
-      .thenResolve("COMPLETED main interface get all keys in the database test.")
+      .thenResolve("COMPLETED get all keys in the database test.")
       .then(log);
     });
 
