@@ -28,5 +28,16 @@
   },
   "dependencies": {
     "q": "^1.4.1"
-  }
+  },
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vergara/indexeddb-promised.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vergara/indexeddb-promised/issues"
+  },
+  "homepage": "https://github.com/vergara/indexeddb-promised"
 }
