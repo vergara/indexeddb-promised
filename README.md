@@ -53,12 +53,36 @@ myApp.users.add({id: 32, email: 'user2@example.com'});
 **keyType:** can be {autoIncrement: true}, {keyPath: key}, both, or undefined for out of line keys.
 
 **indexes:** contains index definition objects:
-  **name:** makes access to the index available through objectNameByName.
+
+  **name:** makes access to the index available through objectStoreByName.
   ```javascript
   var user = myAppDB.usersByEmail.get('user@example.com');
   ```
   **keyPath:** name of the key in the value object used for the index to lookup data.
+
   **indexOptions:** see [the Mozilla documentation on createIndex](https://developer.mozilla.org/en-US/docs/Web/API/IDBObjectStore/createIndex). Example: ```{unique: false}```
+
+Example:
+```javascript
+var builder = new Builder('myApp')
+.setVersion(1)
+.addObjectStore(
+  {
+    name: 'users',
+    keyType: {keyPath: 'id'},
+    indexes: [
+      {
+        name: 'email',
+        keyPath: 'email',
+        {unique: true}
+      }
+    ]
+  })
+.build();
+```
+
+####setVersion(number)
+*number* must be an integer. Changes in the builder, like adding objectStores or indexes to existing objectStores, must be accompanied with an increase in the version number in the setVersion() function in order for the schema changes to take effect.
 
 ##API
 ###indexeddb.objectStore.add(record[, key])
