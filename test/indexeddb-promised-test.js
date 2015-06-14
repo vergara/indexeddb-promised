@@ -47,16 +47,16 @@ describe('indexeddb-promised', function() {
 
     var builder = new Builder('testdb' + testCount);
     builder.setVersion(1);
-    builder.setDoUpgrade(doUpgrade);
+    builder.addObjectStore({name: 'testObjStore', keyType: {autoIncrement: true}});
 
     var indexeddb = builder.build();
-    log('created indexeddb object.');
+    //log('created indexeddb object.');
 
     return indexeddb;
   };
 
   beforeEach('preparing test database', function() {
-    log('creating new indexeddb...');
+    //log('creating new indexeddb...');
     indexeddb = createDbWithTestObjStore();
 
     return indexeddb.getDb();
@@ -378,4 +378,231 @@ describe('indexeddb-promised', function() {
     });
 
   });
+
+  describe('CRUD operations main interface', function() {
+    it('main interface: should add a record in the db', function() {
+      log('STARTING main interface add test');
+
+      var testRecord = {testKey: "testValue"};
+
+      var test = function(resultKey) {
+        resultKey.should.eql(1);
+        return indexeddb.testObjStore.get(1).then(function(result) {
+          result.should.eql(testRecord);
+        });
+      };
+
+      return indexeddb.testObjStore.add(testRecord)
+      .then(test)
+      .thenResolve("COMPLETED main interface add test.")
+      .then(log);
+    });
+
+    it('main interface: should delete a record in the db', function() {
+      log('STARTING main interface delete test');
+      var testRecord = {testKey: "testValue"};
+
+      var testAdded = function(resultKey) {
+        resultKey.should.eql(1);
+        return indexeddb.testObjStore.get(1).then(function(result) {
+          result.should.eql(testRecord);
+        });
+      };
+
+      var deleteRecord = function() {
+        return indexeddb.testObjStore.delete(1);
+      }
+
+      var testDeleted = function() {
+        return indexeddb.testObjStore.get(1).then(function(result) {
+          expect(result).to.not.be.ok;
+        });
+      };
+
+      return indexeddb.testObjStore.add(testRecord)
+      .then(testAdded)
+      .then(deleteRecord)
+      .then(testDeleted)
+      .thenResolve("COMPLETED main interface delete test.")
+      .then(log);
+    });
+
+    it('main interface: should update a record in the db', function() {
+      log('STARTING main interface update test');
+      var testRecord = {testKey: "testValue"};
+      var updatedRecord = {testKey: "updatedValue"};
+
+      var testAdded = function(resultKey) {
+        resultKey.should.eql(1);
+        return indexeddb.testObjStore.get(1).then(function(result) {
+          result.should.eql(testRecord);
+        });
+      };
+
+      var updateRecord = function() {
+        return indexeddb.testObjStore.put(updatedRecord, 1);
+      }
+
+      var testUpdated = function() {
+        return indexeddb.testObjStore.get(1).then(function(result) {
+          result.should.eql(updatedRecord);
+        });
+      };
+
+      return indexeddb.testObjStore.add(testRecord)
+      .then(testAdded)
+      .then(updateRecord)
+      .then(testUpdated)
+      .thenResolve("COMPLETED main interface update test.")
+      .then(log);
+    });
+
+    it('main interface: should update a record in the db using keyPath', function() {
+      log('STARTING main interface update using keyPath test');
+      var testRecord = {id: 1, testKey: "testValue"};
+      var updatedRecord = {id: 1, testKey: "updatedValue"};
+      var builder = new Builder('testdb2_' + testCount)
+      .setVersion(1)
+      .addObjectStore({name: 'testObjStore', keyType: {keyPath : 'id'}});
+      var indexeddb2 = builder.build();
+
+      var testAdded = function(resultKey) {
+        resultKey.should.eql(1);
+        return indexeddb2.get('testObjStore', 1).then(function(result) {
+          result.should.eql(testRecord);
+        });
+      };
+
+      var updateRecord = function() {
+        return indexeddb2.put('testObjStore', updatedRecord);
+      }
+
+      var testUpdated = function() {
+        return indexeddb2.get('testObjStore', 1).then(function(result) {
+          result.should.eql(updatedRecord);
+        });
+      };
+
+      return indexeddb2.add('testObjStore', testRecord)
+      .then(testAdded)
+      .then(updateRecord)
+      .then(testUpdated)
+      .thenResolve("COMPLETED main interface update using keyPath test.")
+      .then(log);
+    });
+
+    it('main interface: should get all records in the database', function() {
+      log('STARTING main interface get all records in the database test');
+      var builder = new Builder('testdb2_' + testCount)
+      .setVersion(1)
+      .addObjectStore({name: 'testObjStore', keyType: {keyPath : 'id'}});
+      var indexeddb2 = builder.build();
+
+      var test = function() {
+        return indexeddb2.testObjStore.getAll()
+        .tap(function(result) {
+          log('getAll(): ' + JSON.stringify(result));
+        })
+        .then(function(result) {
+          result.should.have.length(5);
+          for(var i=1;i <= 5;i++) {
+            result[i-1].should.eql({id: i, testKey: "testValue" + i});
+          }
+        });
+      };
+
+      var addPromises = [];
+      for(var i=1;i <= 5;i++) {
+        addPromises.push(
+          indexeddb2.testObjStore.add({id: i, testKey: "testValue" + i})
+        );
+      }
+
+      return Q.all(addPromises)
+      .then(test)
+      .thenResolve("COMPLETED main interface get all records in the database test.")
+      .then(log);
+    });
+
+    it('main interface: should get all keys in the database', function() {
+      log('STARTING main interface get all keys in the database test');
+      var builder = new Builder('testdb2_' + testCount)
+      .setVersion(1)
+      .addObjectStore({name: 'testObjStore', keyType: {keyPath : 'id'}});
+      var indexeddb2 = builder.build();
+
+      var test = function() {
+        return indexeddb2.testObjStore.getAllKeys()
+        .tap(function(result) {
+          log('getAllKeys(): ' + JSON.stringify(result));
+        })
+        .then(function(result) {
+          result.should.have.length(5);
+          for(var i=1;i <= 5;i++) {
+            result[i-1].should.eql(i);
+          }
+        });
+      };
+
+      var addPromises = [];
+      for(var i=1;i <= 5;i++) {
+        addPromises.push(
+          indexeddb2.testObjStore.add({id: i, testKey: "testValue" + i})
+        );
+      }
+
+      return Q.all(addPromises)
+      .then(test)
+      .thenResolve("COMPLETED main interface get all keys in the database test.")
+      .then(log);
+    });
+
+  });
+
+  describe('Indexes', function() {
+    it('should create an index and be able to use it', function() {
+      log('STARTING create and use index test');
+      var builder = new Builder('testdb2_' + testCount)
+      .setVersion(1)
+      .addObjectStore(
+        {
+          name: 'testObjStore',
+          keyType: {keyPath : 'id'},
+          indexes: [
+            {
+              name: 'testKey',
+              keyPath: 'testKey',
+              options: {unique: true}
+            }
+          ]
+        }
+      )
+      .setDebug();
+
+      var indexeddb2 = builder.build();
+
+      var test = function() {
+        return indexeddb2.testObjStoreByTestKey.get('testValue3')
+        .tap(function(result) {
+          log('found: '+JSON.stringify(result))
+        })
+        .then(function(result) {
+          result.should.eql({id: 3, testKey: "testValue3"});
+        });
+      };
+
+      var addPromises = [];
+      for(var i=1;i <= 5;i++) {
+        addPromises.push(
+          indexeddb2.testObjStore.add({id: i, testKey: "testValue" + i})
+        );
+      }
+
+      return Q.all(addPromises)
+      .then(test)
+      .thenResolve("COMPLETED create and use index test.")
+      .then(log);
+    });
+  });
+
 });
