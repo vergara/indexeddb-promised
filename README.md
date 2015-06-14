@@ -74,7 +74,7 @@ var builder = new Builder('myApp')
       {
         name: 'email',
         keyPath: 'email',
-        {unique: true}
+        options: {unique: true}
       }
     ]
   })
