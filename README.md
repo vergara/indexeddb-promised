@@ -9,7 +9,7 @@ It also uses the builder pattern to configure the database schema and return an 
 
 ##Creating an instance of indexeddb and a database schema
 
-'''javascript
+```javascript
 var builder = new Builder('myApp')
 .setVersion(1)
 .addObjectStore(
@@ -38,7 +38,7 @@ var myAppDB = builder.build();
 var user1 = myAppDB.users.get(25);
 var user2 = myAppDB.usersByEmail.get('user@example.com');
 
-'''
+```
 
 ###Functions
 ####Builder Constructor: new Builder(dbname)
@@ -47,18 +47,18 @@ var user2 = myAppDB.usersByEmail.get('user@example.com');
 *storeDefinitionObject*:
 **name:** name of the store in indexedDB. Also used to expose an objectStore with the same name in the db object:
 
-'''javascript
+```javascript
 myApp.users.add({id: 32, email: 'user2@example.com'});
-'''
+```
 **keyType:** can be {autoIncrement: true}, {keyPath: key}, both, or undefined for out of line keys.
 
 **indexes:** contains index definition objects:
   **name:** makes access to the index available through objectNameByName.
-  '''javascript
+  ```javascript
   var user = myAppDB.usersByEmail.get('user@example.com');
-  '''
+  ```
   **keyPath:** name of the key in the value object used for the index to lookup data.
-  **indexOptions:** see [the Mozilla documentation on createIndex](https://developer.mozilla.org/en-US/docs/Web/API/IDBObjectStore/createIndex). Example: '''{unique: false}'''
+  **indexOptions:** see [the Mozilla documentation on createIndex](https://developer.mozilla.org/en-US/docs/Web/API/IDBObjectStore/createIndex). Example: ```{unique: false}```
 
 ##API
 ###indexeddb.objectStore.add(record[, key])
@@ -88,13 +88,13 @@ The function returns a promise for an array with the accumulated results of each
 
 The operations are defined as follows:
 
-'''javascript
+```javascript
 function operation(transaction) {
   // Perform operations using indexedDB's API
   ...
   var request = objectStore.get(1);
   return request;
 }
-'''
+```
 
 Operations take a transaction as a parameter that can be use to retrieve objectStores and indexes. They can return a request if the result is useful. Falsy values are accumulated as *null*.
