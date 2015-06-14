@@ -7,6 +7,58 @@ It also uses the builder pattern to configure the database schema and return an 
 ##Getting started
 ###Using browserify
 
+##Creating an instance of indexeddb and a database schema
+
+'''javascript
+var builder = new Builder('myApp')
+.setVersion(1)
+.addObjectStore(
+  {
+    name: 'users',
+    keyType: {keyPath: 'id'},
+    indexes: [
+      {
+        name: 'email',
+        keyPath: 'email',
+        {unique: true}
+      }
+    ]
+  })
+.addObjectStore(
+  {name: 'orders',
+  keyType: {autoIncrement: true}
+  })
+.addObjectStore(
+  {name: 'products',
+  keyType: {keyPath: 'id'}
+  });
+
+var myAppDB = builder.build();
+
+var user1 = myAppDB.users.get(25);
+var user2 = myAppDB.usersByEmail.get('user@example.com');
+
+'''
+
+###Functions
+####Builder Constructor: new Builder(dbname)
+*dbname* string represents the name of the database that is going to be opened or created in indexedDB.
+####addObjectStore(storeDefinitionObject)
+*storeDefinitionObject*:
+**name:** name of the store in indexedDB. Also used to expose an objectStore with the same name in the db object:
+
+'''javascript
+myApp.users.add({id: 32, email: 'user2@example.com'});
+'''
+**keyType:** can be {autoIncrement: true}, {keyPath: key}, both, or undefined for out of line keys.
+
+**indexes:** contains index definition objects:
+  **name:** makes access to the index available through objectNameByName.
+  '''javascript
+  var user = myAppDB.usersByEmail.get('user@example.com');
+  '''
+  **keyPath:** name of the key in the value object used for the index to lookup data.
+  **indexOptions:** see [the Mozilla documentation on createIndex](https://developer.mozilla.org/en-US/docs/Web/API/IDBObjectStore/createIndex). Example: '''{unique: false}'''
 
 ##API
 ###indexeddb.objectStore.add(record[, key])
