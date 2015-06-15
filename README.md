@@ -6,10 +6,184 @@ It also uses the builder pattern to configure the database schema and return an 
 
 ##Getting started
 ###Using browserify
+In an empty folder, run the commands:
+```
+npm install -g gulp browserify
+npm install indexeddb-promised vinyl-source-stream
+```
+Create the files:
+
+gulpfile.js:
+```javascript
+var browserify = require('browserify');
+var gulp = require('gulp');
+var source = require('vinyl-source-stream');
+
+var sourceFile = './js/app.js';
+var destFolder = './';
+var destFile = 'bundle.js';
+
+gulp.task('browserify', function() {
+    var bundler = browserify({
+    cache: {}, packageCache: {}, fullPaths: true,
+    entries: [sourceFile],
+    extensions: ['.js'],
+    debug: true
+  });
+
+  var bundle = function() {
+    return bundler
+      .bundle()
+      .pipe(source(destFile))
+      .pipe(gulp.dest(destFolder));
+  };
+
+  return bundle();
+});
+
+gulp.task('default', ['browserify']);
+```
+index.html:
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <script type="text/javascript" src="bundle.js"></script>
+  </head>
+  <body>
+    Press Enter to create note.<br>
+    Title: <input id="title" type="text"><br>
+    Contnet: <input id="content" type="text"><br>
+    <br>
+    Notes:
+    <table>
+      <tr>
+        <th>Sorted by title</th>
+        <th>Sorted by creation date</th>
+      </tr>
+      <tr>
+        <td>
+          <dl id="sortedByTitle">
+        </td>
+        <td>
+          <dl id="sortedByCreated">
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+```
+js/app.js:
+```javascript
+var app = require('./index')();
+```
+js/index.js:
+```javascript
+module.exports = function() {
+  window.addEventListener("load", function load(event){
+    var Builder = require('indexeddb-promised');
+    var builder = new Builder('appDB');
+    var appDB = builder
+    .setVersion(1)
+    .addObjectStore(
+      {
+        name: 'notes',
+        keyType: {keyPath: 'id', autoIncrement: true},
+        indexes: [
+          {
+            name: 'title',
+            keyPath: 'title',
+            options: {unique: false}
+          },
+          {
+            name: 'created',
+            keyPath: 'created',
+            options: {unique: false}
+          }
+        ]
+      }
+    )
+    .build();
+
+    var contentElement = document.getElementById('content');
+    var titleElement = document.getElementById('title');
+    contentElement.addEventListener('keypress', addNewNote);
+    titleElement.addEventListener('keypress', addNewNote);
+
+    function addNewNote(event) {
+      if(event.keyCode === 13) {
+        var noteContent = contentElement.value;
+        var title = titleElement.value || 'Note from '+new Date();
+        var newNote = {
+          title: title,
+          content: noteContent,
+          created: new Date()
+        };
+        appDB.notes.add(newNote);
+        console.log('note added: '+JSON.stringify(newNote));
+        contentElement.value = '';
+        titleElement.value = '';
+        titleElement.focus();
+
+        updateViews();
+      }
+    }
+
+    var sortedByTitle = document.getElementById('sortedByTitle');
+    var sortedByCreated = document.getElementById('sortedByCreated');
+
+    function updateViews() {
+      while (sortedByTitle.firstChild) {
+        sortedByTitle.removeChild(sortedByTitle.firstChild);
+      }
+
+      while (sortedByCreated.firstChild) {
+        sortedByCreated.removeChild(sortedByCreated.firstChild);
+      }
+
+      appDB.notesByTitle.getAll().then(function(notes) {
+        notes.forEach(function(note) {
+          var dt = document.createElement("dt");
+          dt.appendChild(document.createTextNode(note.title));
+          var dd = document.createElement("dd");
+          dd.appendChild(document.createTextNode(note.content +
+            " -- Created on: " + note.created));
+
+          sortedByTitle.appendChild(dt);
+          sortedByTitle.appendChild(dd);
+        });
+      });
+
+      appDB.notesByCreated.getAll().then(function(notes) {
+        notes.forEach(function(note) {
+          var dt = document.createElement("dt");
+          dt.appendChild(document.createTextNode(note.title));
+          var dd = document.createElement("dd");
+          dd.appendChild(document.createTextNode(note.content +
+            " -- Created on: " + note.created));
+
+          sortedByCreated.appendChild(dt);
+          sortedByCreated.appendChild(dd);
+        });
+      });
+    }
+
+    updateViews();
+  },false);
+};
+```
+Run the command:
+```
+gulp
+```
+
+Now you can open the index.html file from your browser and give it a try.
 
 ##Creating an instance of indexeddb and a database schema
 
 ```javascript
+var Builder = require('indexeddb-promised');
+
 var builder = new Builder('myApp')
 .setVersion(1)
 .addObjectStore(
@@ -45,11 +219,24 @@ var user2 = myAppDB.usersByEmail.get('user@example.com');
 *dbname* string represents the name of the database that is going to be opened or created in indexedDB.
 ####addObjectStore(storeDefinitionObject)
 *storeDefinitionObject*:
+
 **name:** name of the store in indexedDB. Also used to expose an objectStore with the same name in the db object:
 
 ```javascript
-myApp.users.add({id: 32, email: 'user2@example.com'});
+var myAppDB = new Builder('myApp')
+.addObjectStore(
+  {
+    name: 'users',
+    ...
+...
+.build();
+
+myAppDB.users.add({
+  id: 32,
+  email: 'user2@example.com'
+});
 ```
+
 **keyType:** can be {autoIncrement: true}, {keyPath: key}, both, or undefined for out of line keys.
 
 **indexes:** contains index definition objects:
@@ -64,7 +251,9 @@ myApp.users.add({id: 32, email: 'user2@example.com'});
 
 Example:
 ```javascript
-var builder = new Builder('myApp')
+var Builder = require('indexeddb-promised');
+
+var myAppDB = new Builder('myApp')
 .setVersion(1)
 .addObjectStore(
   {
@@ -82,7 +271,7 @@ var builder = new Builder('myApp')
 ```
 
 ####setVersion(number)
-*number* must be an integer. Changes in the builder, like adding objectStores or indexes to existing objectStores, must be accompanied with an increase in the version number in the setVersion() function in order for the schema changes to take effect.
+*number* must be an integer. Changes in the myAppDB, like adding objectStores or indexes to existing objectStores, must be accompanied with an increase in the version number in the setVersion() function in order for the schema changes to take effect.
 
 ##API
 ###indexeddb.objectStore.add(record[, key])
