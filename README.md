@@ -310,4 +310,4 @@ function operation(transaction) {
 }
 ```
 
-Operations take a transaction as a parameter that can be use to retrieve objectStores and indexes. They can return a request if the result is useful. Falsy values are accumulated as *null*.
+Operations take a transaction as a parameter that can be use to retrieve objectStores and indexes. They can return a request if the result is useful. Falsey values are accumulated as *null*.

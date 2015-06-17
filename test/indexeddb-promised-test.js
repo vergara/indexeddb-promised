@@ -2,7 +2,6 @@ var chai = require("chai");
 var should = chai.should();
 var expect = chai.expect;
 chai.use(require('chai-fuzzy'));
-chai.use(require('chai-things'));
 var Builder = require("../js/indexeddb-promised");
 var Q = require('q');
 
@@ -216,6 +215,59 @@ describe('indexeddb-promised', function() {
       return indexeddb.testObjStore.add(testRecord)
       .then(test)
       .thenResolve("COMPLETED add test.")
+      .then(log);
+    });
+
+    it('should add a record in the db using an out of line key', function() {
+      log('STARTING add a record in the db using an out of line key test');
+      var builder = new Builder('testdb2_' + testCount)
+      .setVersion(1)
+      .addObjectStore({name: 'testObjStore'});
+      var indexeddb2 = builder.build();
+
+      var test1 = function() {
+        return indexeddb2.testObjStore.getAll()
+        .tap(function(result) {
+        })
+        .then(function(result) {
+          result.should.have.length(5);
+          for(var i=1;i <= 5;i++) {
+            result[i-1].should.eql({testKey: "testValue" + i});
+          }
+        });
+      };
+
+      var test2 = function() {
+        var getPromises = [];
+
+        for(var i=1;i <= 5;i++) {
+          (function(i) {
+            getPromises.push(indexeddb2.testObjStore.get('id'+i));
+          })(i);
+        }
+
+        return Q.all(getPromises)
+        .then(function(result) {
+          for(var i=1;i <= 5;i++) {
+            (function(i) {
+              result.should.containOneLike(
+                {testKey: "testValue" + i});
+            })(i);
+          }
+        });
+      };
+
+      var addPromises = [];
+      for(var i=1;i <= 5;i++) {
+        addPromises.push(
+          indexeddb2.testObjStore.add({testKey: "testValue" + i}, 'id'+i)
+        );
+      }
+
+      return Q.all(addPromises)
+      .then(test1)
+      .then(test2)
+      .thenResolve("COMPLETED add a record in the db using an out of line key test.")
       .then(log);
     });
 
