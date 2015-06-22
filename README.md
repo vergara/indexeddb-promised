@@ -274,7 +274,7 @@ var myAppDB = new Builder('myApp')
 *number* must be an integer. Changes in the myAppDB, like adding objectStores or indexes to existing objectStores, must be accompanied with an increase in the version number in the setVersion() function in order for the schema changes to take effect.
 
 ##API
-###indexeddb.objectStore.add(record[, key])
+###indexeddb.objectStore.add(record\[, key\])
 *record* can be any type of object. If not using the keyPath key type in the object store, then it can also be a primitive.
 
 Returns a promise for the key of the record. Useful when using key type autoIncrement: true.
@@ -285,7 +285,7 @@ Return a promise for the value of the record identified by *key*.
 ###indexeddb.objectStore.delete(key)
 Returns a promise resolved with *null*.
 
-###indexeddb.objectStore.put(record[, key])
+###indexeddb.objectStore.put(record\[, key\])
 Similar as *add()*, but replaces existing records. The *key* parameter is not required if keyPath key type is used and the record has the property used as keyPath populated.
 
 ###indexeddb.objectStore.getAll()
@@ -293,6 +293,23 @@ Returns a promise for an array with all values from all records.
 
 ###indexeddb.objectStore.getAllKeys()
 Returns a promise for an array with the keys of all records.
+
+###indexeddb.objectStore.openCursor(\[IDBKeyRange\]\[, 'prev'\])
+Returns a promise for a cursor that can be iterated using the standard iterator syntax:
+```javascript
+indexeddb.testObjStore
+// Iterate key-value pairs in reverse order from 4 through 2, including 4 and 2
+.openCursor(IDBKeyRange.bound(2, 4, false, false), 'prev')
+.then(function(cursor) {
+
+  for(var record of cursor) {
+    // Do something with each record
+  }
+
+});
+```
+
+For more information on *IDBKeyRange* see the [Mozilla documentation on IDBKeyRange](https://developer.mozilla.org/en-US/docs/Web/API/IDBKeyRange).
 
 ###indexeddb.execTransaction(operations,objectStores[, mode])
 Low level method to execute a transaction in the database. The first parameter is an array of functions where each function is an operation that is to be executed in the transaction. The second array contains strings with the names of the obectStores used in the transaction. The last parameter is the transaction mode which can be "readonly" (default) or "readwrite".

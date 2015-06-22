@@ -245,6 +245,17 @@ ObjectStore.prototype.getAllKeys = function() {
   return defer.promise;
 };
 
+ObjectStore.prototype.openCursor = function(idbKeyRange, direction) {
+  var self = this;
+
+  return this.db.then(function(db) {
+    var transaction = db.transaction(self.storeName);
+    var objectStore = transaction.objectStore(self.storeName);
+
+    return new Cursor(self.getStoreOrIndex(objectStore), idbKeyRange, direction);
+  });
+};
+
 var Index = function(db, storeName, indexName) {
 
   ObjectStore.call(this, db, storeName);
@@ -260,6 +271,31 @@ Index.prototype.getStoreOrIndex = function(objectStore) {
 };
 Index.prototype.constructor = Index;
 
+var Cursor = function(objectStore, idbKeyRange, direction) {
+  var defer = Q.defer();
+  var result = [];
+
+  objectStore.openCursor(idbKeyRange, direction)
+  .onsuccess = function(event) {
+    var cursor = event.target.result;
+    if(cursor) {
+      result.push({key: cursor.key, value: cursor.value});
+      cursor.continue();
+    } else {
+      this[Symbol.iterator] = function* () {
+        var i = 0;
+        while(i < result.length) {
+          yield result[i];
+          i++;
+        }
+      };
+      defer.resolve(this);
+    }
+  };
+
+  return defer.promise;
+};
+
 var Indexeddb = function(dbName, version, doUpgrade) {
   var openDbDeferred = Q.defer();
 
@@ -273,7 +309,7 @@ var Indexeddb = function(dbName, version, doUpgrade) {
     request = window.indexedDB.open(dbName);
   }
 
-  request.onupgradeneeded = function (event) {
+  request.onupgradeneeded = function(event) {
     var db = event.target.result;
     if(doUpgrade) {
       doUpgrade(db);

@@ -4,6 +4,7 @@ var expect = chai.expect;
 chai.use(require('chai-fuzzy'));
 var Builder = require("../js/indexeddb-promised");
 var Q = require('q');
+var _ = require('lodash');
 
 var testCount = 1;
 var log = function(msg) {
@@ -476,6 +477,118 @@ describe('indexeddb-promised', function() {
       .thenResolve("COMPLETED create and use index test.")
       .then(log);
     });
+  });
+
+  describe('Cursors', function() {
+    it('should create a cursor and be able to use it', function() {
+      log('STARTING create and use cursor test.');
+      var addPromises = [];
+      for(var i=1;i <= 5;i++) {
+        addPromises.push(
+          indexeddb.testObjStore.add("testValue" + i)
+        );
+      }
+
+      function test() {
+        return indexeddb.testObjStore.openCursor().then(function(cursor) {
+          var results = [];
+
+          for(var record of cursor) {
+            results.push(record);
+          }
+
+          var keys = _.pluck(results, 'key');
+          var values = _.pluck(results, 'value');
+
+          keys.should.eql([1, 2, 3, 4, 5]);
+          values.should.eql(
+            ['testValue1',
+            'testValue2',
+            'testValue3',
+            'testValue4',
+            'testValue5']);
+        });
+      }
+
+      return Q.all(addPromises)
+      .then(test)
+      .thenResolve("COMPLETED create and use cursor test.")
+      .then(log);
+    });
+
+    it('should create a cursor and iterate values 2 through 4', function() {
+      log('STARTING create a cursor and iterate values 2 through 4.');
+      var addPromises = [];
+      for(var i=1;i <= 5;i++) {
+        addPromises.push(
+          indexeddb.testObjStore.add("testValue" + i)
+        );
+      }
+
+      function test() {
+        return indexeddb.testObjStore
+        .openCursor(IDBKeyRange.bound(2, 4, false, false))
+        .then(function(cursor) {
+          var results = [];
+
+          for(var record of cursor) {
+            results.push(record);
+          }
+
+          var keys = _.pluck(results, 'key');
+          var values = _.pluck(results, 'value');
+
+          keys.should.eql([2, 3, 4]);
+          values.should.eql(
+            [
+            'testValue2',
+            'testValue3',
+            'testValue4']);
+        });
+      }
+
+      return Q.all(addPromises)
+      .then(test)
+      .thenResolve("COMPLETED create a cursor and iterate values 2 through 4.")
+      .then(log);
+    });
+
+    it('should create a cursor and iterate the object store in reverse order', function() {
+      log('STARTING create a cursor and iterate the object store in reverse order test.');
+      var addPromises = [];
+      for(var i=1;i <= 5;i++) {
+        addPromises.push(
+          indexeddb.testObjStore.add("testValue" + i)
+        );
+      }
+
+      function test() {
+        return indexeddb.testObjStore.openCursor(null, 'prev').then(function(cursor) {
+          var results = [];
+
+          for(var record of cursor) {
+            results.push(record);
+          }
+
+          var keys = _.pluck(results, 'key');
+          var values = _.pluck(results, 'value');
+
+          keys.should.eql([5, 4, 3, 2, 1]);
+          values.should.eql(
+            ['testValue5',
+            'testValue4',
+            'testValue3',
+            'testValue2',
+            'testValue1']);
+        });
+      }
+
+      return Q.all(addPromises)
+      .then(test)
+      .thenResolve("COMPLETED create a cursor and iterate the object store in reverse order test.")
+      .then(log);
+    });
+
   });
 
 });
