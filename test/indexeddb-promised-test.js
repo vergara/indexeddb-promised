@@ -69,7 +69,7 @@ describe('indexeddb-promised', function() {
 
   describe('#constructor', function() {
     it('should create an object that has a database', function() {
-      log('STARING Create DB test.')
+      log('STARING Create DB test.');
       should.exist(indexeddb);
       indexeddb.should.have.property('getDb');
       indexeddb.getDb.should.be.a('function');
@@ -78,7 +78,7 @@ describe('indexeddb-promised', function() {
         should.exist(db);
         db.should.have.property('createObjectStore');
         //done();
-      }
+      };
 
       return indexeddb.getDb()
       .then(hasObjectStore)
@@ -285,7 +285,7 @@ describe('indexeddb-promised', function() {
 
       var deleteRecord = function() {
         return indexeddb.testObjStore.delete(1);
-      }
+      };
 
       var testDeleted = function() {
         return indexeddb.testObjStore.get(1).then(function(result) {
@@ -315,7 +315,7 @@ describe('indexeddb-promised', function() {
 
       var updateRecord = function() {
         return indexeddb.testObjStore.put(updatedRecord, 1);
-      }
+      };
 
       var testUpdated = function() {
         return indexeddb.testObjStore.get(1).then(function(result) {
@@ -349,7 +349,7 @@ describe('indexeddb-promised', function() {
 
       var updateRecord = function() {
         return indexeddb2.testObjStore.put(updatedRecord);
-      }
+      };
 
       var testUpdated = function() {
         return indexeddb2.testObjStore.get(1).then(function(result) {
@@ -458,7 +458,7 @@ describe('indexeddb-promised', function() {
       var test = function() {
         return indexeddb2.testObjStoreByTestKey.get('testValue3')
         .tap(function(result) {
-          log('found: '+JSON.stringify(result))
+          log('found: '+JSON.stringify(result));
         })
         .then(function(result) {
           result.should.eql({id: 3, testKey: "testValue3"});
