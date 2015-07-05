@@ -113,7 +113,6 @@ ObjectStore.prototype.add = function(record, key) {
       resultAdd = event.target.result;
       deferAdd.resolve(event.target.result);
     };
-
   });
 
   return deferTransaction.promise;
@@ -256,6 +255,37 @@ ObjectStore.prototype.openCursor = function(idbKeyRange, direction) {
   });
 };
 
+ObjectStore.prototype.openProgressiveCursor = function(idbKeyRange, direction) {
+  var self = this;
+
+  var countDone = Q.defer();
+  var defers = [];
+
+  return this.db.then(function(db) {
+    self.db = db;
+
+    var transaction = db.transaction(self.storeName);
+    var objectStore = transaction.objectStore(self.storeName);
+
+    var countRequest = objectStore.count(idbKeyRange);
+    countRequest.onsuccess = function() {
+      defers.length = countRequest.result;
+      for(var i=0;i < defers.length;i++) {
+        defers[i] = Q.defer();
+      }
+      countDone.resolve(defers);
+    };
+
+    return countDone.promise;
+  })
+  .then(function(defers) {
+    var transaction = self.db.transaction(self.storeName);
+    var objectStore = transaction.objectStore(self.storeName);
+
+    return new ProgressiveCursor(self.getStoreOrIndex(objectStore), idbKeyRange, direction, defers);
+  });
+};
+
 var Index = function(db, storeName, indexName) {
 
   ObjectStore.call(this, db, storeName);
@@ -295,6 +325,39 @@ var Cursor = function(objectStore, idbKeyRange, direction) {
 
   return defer.promise;
 };
+
+var ProgressiveCursor = function(objectStore, idbKeyRange, direction, defers) {
+
+  var self = this;
+
+  var records = [];
+
+  defers.forEach(function(defer) {
+    records.push(defer.promise);
+  });
+
+  this[Symbol.iterator] = function* () {
+    var recordsCount = records.length;
+    for(var i=0;i < recordsCount;i++) {
+      var record = records.shift();
+      yield record;
+    }
+  };
+
+  objectStore.openCursor(idbKeyRange, direction)
+  .onsuccess = function(event) {
+    var cursor = event.target.result;
+    if(cursor) {
+      var defer = defers.shift();
+      defer.resolve({key: cursor.key, value: cursor.value});
+      cursor.continue();
+    }
+  };
+
+  return this;
+};
+
+
 
 var Indexeddb = function(dbName, version, doUpgrade) {
   var openDbDeferred = Q.defer();

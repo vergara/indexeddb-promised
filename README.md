@@ -286,7 +286,7 @@ Return a promise for the value of the record identified by *key*.
 Returns a promise resolved with *null*.
 
 ###indexeddb.objectStore.put(record\[, key\])
-Similar as *add()*, but replaces existing records. The *key* parameter is not required if keyPath key type is used and the record has the property used as keyPath populated.
+Similar to *add()*, but replaces existing records. The *key* parameter is not required if keyPath key type is used and the record has the property used as keyPath populated.
 
 ###indexeddb.objectStore.getAll()
 Returns a promise for an array with all values from all records.
@@ -310,6 +310,26 @@ indexeddb.testObjStore
 ```
 
 For more information on *IDBKeyRange* see the [Mozilla documentation on IDBKeyRange](https://developer.mozilla.org/en-US/docs/Web/API/IDBKeyRange).
+
+###indexeddb.objectStore.openProgressiveCursor(\[IDBKeyRange\]\[, 'prev'\])
+Similar to openCursor(), but optimized for memory usage. Use this method when retrieving big amounts of data. If the amounts of data are small, openCursor() is faster.
+
+Returns a promise for a cursor that can be iterated using the standard iterator syntax. Each result returned by the iterator is a promise for a record. This is different to how openCursor() works, which returns the record directly. This way of working allows to destroy each record after it has been used so memory usage can be kept low while the iteration is in progress.
+
+Another advantage of this method over openCursor() is that the records can be used immediately as they become available. In the case of openCursor(), all the records must be delivered by the database before they can be used.
+
+```javascript
+indexeddb.testObjStore
+.openProgressiveCursor(null, 'prev').then(function(cursor) {
+
+  for(var recordPromise of cursor) {
+    recordPromise.then(function(record) {
+      // Do something with the record
+    });
+  }
+
+});
+```
 
 ###indexeddb.execTransaction(operations,objectStores[, mode])
 Low level method to execute a transaction in the database. The first parameter is an array of functions where each function is an operation that is to be executed in the transaction. The second array contains strings with the names of the obectStores used in the transaction. The last parameter is the transaction mode which can be "readonly" (default) or "readwrite".

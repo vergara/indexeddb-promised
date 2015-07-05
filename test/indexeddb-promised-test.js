@@ -25,7 +25,6 @@ describe('indexeddb-promised', function() {
         var databaseName = databases[i];
         var dbNumber = databaseName.replace(/^testdb/, '');
         dbNumber = new Number(dbNumber);
-        //console.log('dbNumber: '+dbNumber);
         if(dbNumber > max) {
           max = dbNumber;
         }
@@ -50,13 +49,11 @@ describe('indexeddb-promised', function() {
     builder.addObjectStore({name: 'testObjStore', keyType: {autoIncrement: true}});
 
     var indexeddb = builder.build();
-    //log('created indexeddb object.');
 
     return indexeddb;
   };
 
   beforeEach('preparing test database', function() {
-    //log('creating new indexeddb...');
     indexeddb = createDbWithTestObjStore();
 
     return indexeddb.getDb();
@@ -77,7 +74,6 @@ describe('indexeddb-promised', function() {
       var hasObjectStore = function(db) {
         should.exist(db);
         db.should.have.property('createObjectStore');
-        //done();
       };
 
       return indexeddb.getDb()
@@ -91,7 +87,6 @@ describe('indexeddb-promised', function() {
       var db = indexeddb.getDb();
 
       var hasTestObjStore = function(db) {
-        //log("objectStoreNames: " + JSON.stringify(db.objectStoreNames, null, 2));
         db.objectStoreNames.should.containOneLike('testObjStore');
       };
 
@@ -109,7 +104,6 @@ describe('indexeddb-promised', function() {
       var db = builder.build().getDb();
 
       var hasTestObjStore = function(db) {
-        //log("objectStoreNames: " + JSON.stringify(db.objectStoreNames, null, 2));
         db.objectStoreNames.should.containOneLike('testObjStore');
       };
 
@@ -130,7 +124,6 @@ describe('indexeddb-promised', function() {
       var db = builder.build().getDb();
 
       var hasTestObjStore = function(db) {
-        //log("objectStoreNames: " + JSON.stringify(db.objectStoreNames, null, 2));
         db.objectStoreNames.should.containOneLike('testObjStore1');
         db.objectStoreNames.should.containOneLike('testObjStore2');
         db.objectStoreNames.should.containOneLike('testObjStore3');
@@ -586,6 +579,54 @@ describe('indexeddb-promised', function() {
       return Q.all(addPromises)
       .then(test)
       .thenResolve("COMPLETED create a cursor and iterate the object store in reverse order test.")
+      .then(log);
+    });
+
+  });
+
+  describe('Progessive Cursors', function() {
+    it('should create a cursor and be able to retrieve data while it becomes available', function() {
+      log('STARTING create and use cursor and retrieve data while it becomes available test.');
+      var addPromises = [];
+      for(var i=1;i <= 6;i++) {
+        addPromises.push(
+          indexeddb.testObjStore.add("testValue" + i)
+        );
+      }
+
+      function test() {
+        return indexeddb.testObjStore.openProgressiveCursor(null, 'prev').then(function(cursor) {
+          var results = [];
+          var promises = [];
+
+          for(var recordPromise of cursor) {
+            promises.push(recordPromise);
+            recordPromise.then(function(record) {
+              results.push(record);
+              log('Received record: ' + record.key + " | " + record.value);
+            });
+          }
+
+          return Q.all(promises).then(function() {
+            var keys = _.pluck(results, 'key');
+            var values = _.pluck(results, 'value');
+
+            keys.should.eql([6, 5, 4, 3, 2, 1]);
+            values.should.eql(
+              ['testValue6',
+              'testValue5',
+              'testValue4',
+              'testValue3',
+              'testValue2',
+              'testValue1']);
+          });
+
+        });
+      }
+
+      return Q.all(addPromises)
+      .then(test)
+      .thenResolve("COMPLETED create and use cursor and retrieve data while it becomes available test.")
       .then(log);
     });
 
