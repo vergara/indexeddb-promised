@@ -274,7 +274,7 @@ var myAppDB = new Builder('myApp')
 *number* must be an integer. Changes in the myAppDB, like adding objectStores or indexes to existing objectStores, must be accompanied with an increase in the version number in the setVersion() function in order for the schema changes to take effect.
 
 #### setDebug()
-Makes a database with name dbName available as indexeddbPromised_dbName.
+Makes a database with name 'dbName' available in the global object as 'indexeddbPromised_dbName'.
 
 ## API
 ### indexeddb.objectStore.add(record\[, key\])
