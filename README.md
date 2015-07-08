@@ -1,11 +1,11 @@
-#indexeddb-promised
+# indexeddb-promised
 
 This library implements an interface for indexedDB where all the functions return a promise for the result of the underlying indexedDB function they call.
 
 It also uses the builder pattern to configure the database schema and return an object to interact with it.
 
-##Getting started
-###Using browserify
+## Getting started
+### Using browserify
 In an empty folder, run the commands:
 ```
 npm install -g gulp browserify
@@ -179,7 +179,7 @@ gulp
 
 Now you can open the index.html file from your browser and give it a try.
 
-##Creating an instance of indexeddb and a database schema
+## Creating an instance of indexeddb and a database schema
 
 ```javascript
 var Builder = require('indexeddb-promised');
@@ -214,10 +214,10 @@ var user2 = myAppDB.usersByEmail.get('user@example.com');
 
 ```
 
-###Functions
-####Builder Constructor: new Builder(dbname)
+### Functions
+#### Builder Constructor: new Builder(dbname)
 *dbname* string represents the name of the database that is going to be opened or created in indexedDB.
-####addObjectStore(storeDefinitionObject)
+#### addObjectStore(storeDefinitionObject)
 *storeDefinitionObject*:
 
 **name:** name of the store in indexedDB. Also used to expose an objectStore with the same name in the db object:
@@ -270,31 +270,34 @@ var myAppDB = new Builder('myApp')
 .build();
 ```
 
-####setVersion(number)
+#### setVersion(number)
 *number* must be an integer. Changes in the myAppDB, like adding objectStores or indexes to existing objectStores, must be accompanied with an increase in the version number in the setVersion() function in order for the schema changes to take effect.
 
-##API
-###indexeddb.objectStore.add(record\[, key\])
+#### setDebug()
+Makes a database with name dbName available as indexeddbPromised_dbName.
+
+## API
+### indexeddb.objectStore.add(record\[, key\])
 *record* can be any type of object. If not using the keyPath key type in the object store, then it can also be a primitive.
 
 Returns a promise for the key of the record. Useful when using key type autoIncrement: true.
 
-###indexeddb.objectStore.get(key)
+### indexeddb.objectStore.get(key)
 Return a promise for the value of the record identified by *key*.
 
-###indexeddb.objectStore.delete(key)
+### indexeddb.objectStore.delete(key)
 Returns a promise resolved with *null*.
 
-###indexeddb.objectStore.put(record\[, key\])
+### indexeddb.objectStore.put(record\[, key\])
 Similar to *add()*, but replaces existing records. The *key* parameter is not required if keyPath key type is used and the record has the property used as keyPath populated.
 
-###indexeddb.objectStore.getAll()
+### indexeddb.objectStore.getAll()
 Returns a promise for an array with all values from all records.
 
-###indexeddb.objectStore.getAllKeys()
+### indexeddb.objectStore.getAllKeys()
 Returns a promise for an array with the keys of all records.
 
-###indexeddb.objectStore.openCursor(\[IDBKeyRange\]\[, 'prev'\])
+### indexeddb.objectStore.openCursor(\[IDBKeyRange\]\[, 'prev'\])
 Returns a promise for a cursor that can be iterated using the standard iterator syntax:
 ```javascript
 indexeddb.testObjStore
@@ -311,7 +314,7 @@ indexeddb.testObjStore
 
 For more information on *IDBKeyRange* see the [Mozilla documentation on IDBKeyRange](https://developer.mozilla.org/en-US/docs/Web/API/IDBKeyRange).
 
-###indexeddb.objectStore.openProgressiveCursor(\[IDBKeyRange\]\[, 'prev'\])
+### indexeddb.objectStore.openProgressiveCursor(\[IDBKeyRange\]\[, 'prev'\])
 Similar to openCursor(), but optimized for memory usage. Use this method when retrieving big amounts of data. If the amounts of data are small, openCursor() is faster.
 
 Returns a promise for a cursor that can be iterated using the standard iterator syntax. Each result returned by the iterator is a promise for a record. This is different to how openCursor() works, which returns the record directly. This way of working allows to destroy each record after it has been used so memory usage can be kept low while the iteration is in progress.
@@ -331,7 +334,7 @@ indexeddb.testObjStore
 });
 ```
 
-###indexeddb.execTransaction(operations,objectStores[, mode])
+### indexeddb.execTransaction(operations,objectStores[, mode])
 Low level method to execute a transaction in the database. The first parameter is an array of functions where each function is an operation that is to be executed in the transaction. The second array contains strings with the names of the obectStores used in the transaction. The last parameter is the transaction mode which can be "readonly" (default) or "readwrite".
 
 The function returns a promise for an array with the accumulated results of each operation.
