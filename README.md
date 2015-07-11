@@ -4,6 +4,8 @@ This library implements an interface for indexedDB where all the functions retur
 
 It also uses the builder pattern to configure the database schema and return an object to interact with it.
 
+Bug reports are welcome at [https://github.com/vergara/indexeddb-promised](https://github.com/vergara/indexeddb-promised).
+
 ## Getting started
 ### Using browserify
 In an empty folder, run the commands:
@@ -282,11 +284,17 @@ Makes a database with name 'dbName' available in the global object as 'indexeddb
 
 Returns a promise for the key of the record. Useful when using key type autoIncrement: true.
 
+### indexeddb.objectStore.count()
+Returns a promise for an integer number that represents the number of records in the object store.
+
 ### indexeddb.objectStore.get(key)
 Return a promise for the value of the record identified by *key*.
 
 ### indexeddb.objectStore.delete(key)
 Returns a promise resolved with *null*.
+
+### indexeddb.objectStore.clear()
+Deletes all records from the object store. Returns a promise resolved with *null*.
 
 ### indexeddb.objectStore.put(record\[, key\])
 Similar to *add()*, but replaces existing records. The *key* parameter is not required if keyPath key type is used and the record has the property used as keyPath populated.
@@ -337,7 +345,7 @@ indexeddb.testObjStore
 ### indexeddb.execTransaction(operations,objectStores[, mode])
 Low level method to execute a transaction in the database. The first parameter is an array of functions where each function is an operation that is to be executed in the transaction. The second array contains strings with the names of the obectStores used in the transaction. The last parameter is the transaction mode which can be "readonly" (default) or "readwrite".
 
-The function returns a promise for an array with the accumulated results of each operation.
+The function returns a promise for an array with the accumulated results of each operation. Falsey values are accumulated as *null*.
 
 The operations are defined as follows:
 
@@ -345,9 +353,56 @@ The operations are defined as follows:
 function operation(transaction) {
   // Perform operations using indexedDB's API
   ...
+  var objectStore = transaction.objectStore("testObjStore");
   var request = objectStore.get(1);
   return request;
 }
 ```
 
-Operations take a transaction as a parameter that can be use to retrieve objectStores and indexes. They can return a request if the result is useful. Falsey values are accumulated as *null*.
+Operations take a transaction as a parameter that can be used to retrieve objectStores and indexes. They can return a request if the result is useful, or null if the database operation doesn't return a value or the result of the operation is to be discarded.
+
+Full example:
+
+```javascript
+var testRecord = {testKey: "testValue"};
+
+var addRecord = function(transaction) {
+  var objectStore = transaction.objectStore("testObjStore");
+  var request = objectStore.add(testRecord);
+  return request;
+};
+
+var getRecords = function(transaction) {
+  var objectStore = transaction.objectStore("testObjStore");
+  var records = [];
+
+  objectStore.openCursor().onsuccess = function(event) {
+    var cursor = event.target.result;
+    var result;
+    if (cursor) {
+      var record = {};
+      record.key = cursor.key;
+      record.value = cursor.value;
+      records.push(record);
+      cursor.continue();
+    }
+  };
+
+  return records;
+};
+
+var deleteRecord = function(transaction) {
+  var objectStore = transaction.objectStore("testObjStore");
+  var request = objectStore.delete(1);
+  return request;
+};
+
+var transactions = [addRecord, getRecords, deleteRecord];
+return indexeddb.execTransaction(transactions,
+  ['testObjStore'], "readwrite")
+.then(function(results) {
+  // results[0] contains the key of the record added in the first operation.
+  // results[1] contains an array with the records from the database (only one record in this example).
+  // results[2] contains the result of the deleteRecord() operation, which is undefined.
+})
+```

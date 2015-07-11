@@ -28,13 +28,13 @@ module.exports = function(config) {
 
     client: {
       mocha: {
-        timeout: 120000
+        timeout: 240000
       }
     },
 
-    captureTimeout: 120000,
+    captureTimeout: 240000,
 
-    browserNoActivityTimeout: 120000,
+    browserNoActivityTimeout: 240000,
 
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor

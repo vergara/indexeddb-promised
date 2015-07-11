@@ -9,7 +9,7 @@ var _ = require('lodash');
 var testCount = 1;
 var log = function(msg) {
   console.log(testCount + ": " + msg);
-}
+};
 
 describe('indexeddb-promised', function() {
 
@@ -24,7 +24,7 @@ describe('indexeddb-promised', function() {
       for(var i=0;i < databases.length;i++) {
         var databaseName = databases[i];
         var dbNumber = databaseName.replace(/^testdb/, '');
-        dbNumber = new Number(dbNumber);
+        dbNumber = parseInt(dbNumber, 10);
         if(dbNumber > max) {
           max = dbNumber;
         }
@@ -40,10 +40,6 @@ describe('indexeddb-promised', function() {
   });
 
   var createDbWithTestObjStore = function() {
-    var doUpgrade = function(db) {
-      db.createObjectStore('testObjStore', { autoIncrement : true });
-    };
-
     var builder = new Builder('testdb' + testCount);
     builder.setVersion(1);
     builder.addObjectStore({name: 'testObjStore', keyType: {autoIncrement: true}});
@@ -235,18 +231,13 @@ describe('indexeddb-promised', function() {
         var getPromises = [];
 
         for(var i=1;i <= 5;i++) {
-          (function(i) {
-            getPromises.push(indexeddb2.testObjStore.get('id'+i));
-          })(i);
+          getPromises.push(indexeddb2.testObjStore.get('id'+i));
         }
 
         return Q.all(getPromises)
         .then(function(result) {
           for(var i=1;i <= 5;i++) {
-            (function(i) {
-              result.should.containOneLike(
-                {testKey: "testValue" + i});
-            })(i);
+            result.should.containOneLike({testKey: "testValue" + i});
           }
         });
       };
@@ -262,6 +253,28 @@ describe('indexeddb-promised', function() {
       .then(test1)
       .then(test2)
       .thenResolve("COMPLETED add a record in the db using an out of line key test.")
+      .then(log);
+    });
+
+    it('should retrieve the count of records in the db', function() {
+      log('STARTING retrieve the count of records in the db test');
+      var numberOfRecords = 5;
+      var addPromises = [];
+
+      for(var i=0;i < numberOfRecords;i++) {
+        addPromises.push(indexeddb.testObjStore.add({testKey: "testValue" + i}));
+      }
+
+      function test() {
+        return indexeddb.testObjStore.count().then(function(count) {
+          log('Count: ' + count);
+          count.should.equal(numberOfRecords);
+        });
+      }
+
+      return Q.all(addPromises)
+      .then(test)
+      .thenResolve('COMPLETED retrieve the count of records in the db test')
       .then(log);
     });
 
@@ -291,6 +304,35 @@ describe('indexeddb-promised', function() {
       .then(deleteRecord)
       .then(testDeleted)
       .thenResolve("COMPLETED delete test.")
+      .then(log);
+    });
+
+    it('should clear all the objects in an object store', function() {
+      log('STARTING clear all the objects in an object store test');
+      var numberOfRecords = 5;
+      var addPromises = [];
+
+      for(var i=0;i < numberOfRecords;i++) {
+        addPromises.push(indexeddb.testObjStore.add({testKey: "testValue" + i}));
+      }
+
+      function test() {
+        return indexeddb.testObjStore.count()
+        .then(function(count) {
+          log('Before clear, count is: ' + count);
+          count.should.equal(numberOfRecords);
+        })
+        .thenResolve(indexeddb.testObjStore.clear())
+        .thenResolve(indexeddb.testObjStore.count())
+        .then(function(count) {
+          log('After clear, count is: ' + count);
+          count.should.equal(0);
+        });
+      }
+
+      return Q.all(addPromises)
+      .then(test)
+      .thenResolve('COMPLETED clear all the objects in an object store test')
       .then(log);
     });
 

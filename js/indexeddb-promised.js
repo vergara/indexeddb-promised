@@ -118,6 +118,30 @@ ObjectStore.prototype.add = function(record, key) {
   return deferTransaction.promise;
 };
 
+ObjectStore.prototype.count = function() {
+  var self = this;
+  var countDefer = Q.defer();
+
+  return this.db.then(function(db) {
+    var objectStore = db.transaction([self.storeName])
+    .objectStore(self.storeName);
+
+    var storeOrIndex = self.getStoreOrIndex(objectStore);
+
+    var request = storeOrIndex.count();
+
+    request.onerror = function(event) {
+      countDefer.reject(event.target.errorCode);
+    };
+
+    request.onsuccess = function(event) {
+      countDefer.resolve(event.target.result);
+    };
+
+    return countDefer.promise;
+  });
+}
+
 ObjectStore.prototype.get = function(key) {
   var self = this;
   var getDefer = Q.defer();
@@ -156,6 +180,29 @@ ObjectStore.prototype.delete = function(key) {
     };
     request.onsuccess = function(event) {
       defer.resolve(event.target.result);
+    };
+
+    return defer.promise;
+  });
+};
+
+ObjectStore.prototype.clear = function() {
+  var self = this;
+  var defer = Q.defer();
+
+  return this.db.then(function(db) {
+    var objectStore = db.transaction([self.storeName],
+       'readwrite').objectStore(self.storeName);
+
+    var storeOrIndex = self.getStoreOrIndex(objectStore);
+
+    var request = storeOrIndex.clear();
+
+    request.onerror = function(event) {
+      defer.reject(event.target.errorCode);
+    };
+    request.onsuccess = function(event) {
+      defer.resolve(null);
     };
 
     return defer.promise;
@@ -356,8 +403,6 @@ var ProgressiveCursor = function(objectStore, idbKeyRange, direction, defers) {
 
   return this;
 };
-
-
 
 var Indexeddb = function(dbName, version, doUpgrade) {
   var openDbDeferred = Q.defer();
