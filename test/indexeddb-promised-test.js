@@ -256,6 +256,29 @@ describe('indexeddb-promised', function() {
       .then(log);
     });
 
+    it('should reject the promise when failure while adding', function() {
+      log('STARTING reject the promise when failure while adding test');
+      var builder = new Builder('testdb2_' + testCount)
+      .setVersion(1)
+      .addObjectStore({
+        name: 'testObjStore',
+        keyType: {keyPath: 'id', autoIncrement: false}
+      });
+      var indexeddb2 = builder.build();
+
+      var testRecord = {id: 1, testKey: "testValue"};
+
+      return indexeddb2.testObjStore.add(testRecord)
+      .thenResolve(indexeddb2.testObjStore.add(testRecord))
+      .then(function() {
+        throw new Error("Test failed: add should have rejected.");
+      }, function(error) {
+        log('Test succeeded: caught exception with errorCode: ' + error.message);
+      })
+      .thenResolve("COMPLETED reject the promise when failure while adding test.")
+      .then(log);
+    });
+
     it('should retrieve the count of records in the db', function() {
       log('STARTING retrieve the count of records in the db test');
       var numberOfRecords = 5;

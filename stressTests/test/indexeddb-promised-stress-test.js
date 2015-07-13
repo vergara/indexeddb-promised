@@ -59,7 +59,7 @@ describe('indexeddb-promised', function() {
   });
 
 
-  xdescribe('Cursors', function() {
+  describe('Cursors', function() {
     it('should test the maximum amount of data that can be inserted and iterate in reverse order', function() {
       log('STARTING test the maximum amount of data that can be inserted and iterate in reverse order.');
       var numberOfRecords = 524;
@@ -91,7 +91,6 @@ describe('indexeddb-promised', function() {
 
           keys.should.eql(expectedKeys);
           values.should.eql(expectedValues);
-
         });
       }
 

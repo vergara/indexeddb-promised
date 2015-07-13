@@ -1,6 +1,6 @@
 {
   "name": "indexeddb-promised",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "Library for indexeddb that uses promises.",
   "main": "js/indexeddb-promised.js",
   "scripts": {

@@ -90,8 +90,8 @@ ObjectStore.prototype.getStoreOrIndex = function(objectStore) {
 ObjectStore.prototype.add = function(record, key) {
   var self = this;
   var deferTransaction = Q.defer();
-  var deferAdd = Q.defer();
   var resultAdd;
+  var operationError;
 
   this.db.then(function(db) {
     return db.transaction(self.storeName, "readwrite");
@@ -102,16 +102,18 @@ ObjectStore.prototype.add = function(record, key) {
     };
 
     transaction.onerror = function(event) {
-      defer.reject(event.target.errorCode);
+      deferTransaction.reject(new Error(operationError || event.target.errorCode || null));
     };
 
     var objectStore = transaction.objectStore(self.storeName);
     var storeOrIndex = self.getStoreOrIndex(objectStore);
-
     var request = storeOrIndex.add(record, key);
+
     request.onsuccess = function(event) {
       resultAdd = event.target.result;
-      deferAdd.resolve(event.target.result);
+    };
+    request.onerror = function(event) {
+      operationError = event.target.errorCode;
     };
   });
 
@@ -120,120 +122,157 @@ ObjectStore.prototype.add = function(record, key) {
 
 ObjectStore.prototype.count = function() {
   var self = this;
-  var countDefer = Q.defer();
+  var deferTransaction = Q.defer();
+  var count;
+  var operationError;
 
   return this.db.then(function(db) {
-    var objectStore = db.transaction([self.storeName])
-    .objectStore(self.storeName);
+    return db.transaction(self.storeName);
+  })
+  .then(function(transaction) {
+    transaction.oncomplete = function(event) {
+      deferTransaction.resolve(count);
+    };
 
+    transaction.onerror = function(event) {
+      deferTransaction.reject(new Error(operationError || event.target.errorCode || null));
+    };
+
+    var objectStore = transaction.objectStore(self.storeName);
     var storeOrIndex = self.getStoreOrIndex(objectStore);
-
     var request = storeOrIndex.count();
 
     request.onerror = function(event) {
-      countDefer.reject(event.target.errorCode);
+      operationError = event.target.errorCode;
     };
 
     request.onsuccess = function(event) {
-      countDefer.resolve(event.target.result);
+      count = event.target.result;
     };
 
-    return countDefer.promise;
+    return deferTransaction.promise;
   });
 }
 
 ObjectStore.prototype.get = function(key) {
   var self = this;
-  var getDefer = Q.defer();
+  var deferTransaction = Q.defer();
+  var getResult;
+  var operationError;
 
   return this.db.then(function(db) {
-    var objectStore = db.transaction([self.storeName])
-    .objectStore(self.storeName);
-    var storeOrIndex = self.getStoreOrIndex(objectStore);
+    return db.transaction(self.storeName);
+  })
+  .then(function(transaction) {
+    transaction.oncomplete = function(event) {
+      deferTransaction.resolve(getResult);
+    };
 
+    transaction.onerror = function(event) {
+      deferTransaction.reject(new Error(operationError || event.target.errorCode || null));
+    };
+
+    var objectStore = transaction.objectStore(self.storeName);
+    var storeOrIndex = self.getStoreOrIndex(objectStore);
     var request = storeOrIndex.get(key);
+
     request.onerror = function(event) {
-      getDefer.reject(event.target.errorCode);
+      operationError = event.target.errorCode;
     };
     request.onsuccess = function(event) {
-      getDefer.resolve(event.target.result);
+      getResult = event.target.result;
     };
 
-    return getDefer.promise;
+    return deferTransaction.promise;
   });
 };
 
 ObjectStore.prototype.delete = function(key) {
   var self = this;
-  var defer = Q.defer();
+  var deferTransaction = Q.defer();
+  var operationError;
 
   return this.db.then(function(db) {
-    var objectStore = db.transaction([self.storeName],
-       'readwrite').objectStore(self.storeName);
+    return db.transaction(self.storeName, 'readwrite');
+  })
+  .then(function(transaction) {
+    transaction.oncomplete = function(event) {
+      deferTransaction.resolve(null);
+    };
 
+    transaction.onerror = function(event) {
+      deferTransaction.reject(new Error(operationError || event.target.errorCode || null));
+    };
+
+    var objectStore = transaction.objectStore(self.storeName);
     var storeOrIndex = self.getStoreOrIndex(objectStore);
-
     var request = storeOrIndex.delete(key);
 
     request.onerror = function(event) {
-      defer.reject(event.target.errorCode);
-    };
-    request.onsuccess = function(event) {
-      defer.resolve(event.target.result);
+      operationError = event.target.errorCode;
     };
 
-    return defer.promise;
+    return deferTransaction.promise;
   });
 };
 
 ObjectStore.prototype.clear = function() {
   var self = this;
-  var defer = Q.defer();
+  var deferTransaction = Q.defer();
+  var operationError;
 
   return this.db.then(function(db) {
-    var objectStore = db.transaction([self.storeName],
-       'readwrite').objectStore(self.storeName);
+    return db.transaction(self.storeName, 'readwrite');
+  })
+  .then(function(transaction) {
+    transaction.oncomplete = function(event) {
+      deferTransaction.resolve(null);
+    };
 
+    transaction.onerror = function(event) {
+      deferTransaction.reject(new Error(operationError || event.target.errorCode || null));
+    };
+
+    var objectStore = transaction.objectStore(self.storeName);
     var storeOrIndex = self.getStoreOrIndex(objectStore);
-
     var request = storeOrIndex.clear();
 
     request.onerror = function(event) {
-      defer.reject(event.target.errorCode);
-    };
-    request.onsuccess = function(event) {
-      defer.resolve(null);
+      operationError = event.target.errorCode;
     };
 
-    return defer.promise;
+    return deferTransaction.promise;
   });
 };
 
 ObjectStore.prototype.put = function(record, key) {
   var self = this;
   var deferTransaction = Q.defer();
-  var deferPut = Q.defer();
-  var resultPut;
+  var putResult;
+  var operationError;
 
   this.db.then(function(db) {
     return db.transaction(self.storeName, "readwrite");
   })
   .then(function(transaction) {
     transaction.oncomplete = function(event) {
-      deferTransaction.resolve(resultPut);
+      deferTransaction.resolve(putResult);
     };
 
     transaction.onerror = function(event) {
-      defer.reject(event.target.errorCode);
+      deferTransaction.reject(new Error(operationError || event.target.errorCode || null));
     };
+
     var objectStore = transaction.objectStore(self.storeName);
     var storeOrIndex = self.getStoreOrIndex(objectStore);
-
     var request = storeOrIndex.put(record, key);
 
     request.onsuccess = function(event) {
-      resultPut = event.target.result;
-      deferPut.resolve(event.target.result);
+      putResult = event.target.result;
+    };
+
+    request.onerror = function(event) {
+      operationError = event.target.errorCode;
     };
 
   });
@@ -243,52 +282,77 @@ ObjectStore.prototype.put = function(record, key) {
 
 ObjectStore.prototype.getAll = function() {
   var self = this;
-  var defer = Q.defer();
+  var deferTransaction = Q.defer();
   var result = [];
+  var operationError;
 
   this.db.then(function(db) {
     var transaction = db.transaction(self.storeName);
-    var objectStore = transaction.objectStore(self.storeName);
 
-    self.getStoreOrIndex(objectStore)
-    .openCursor()
-    .onsuccess = function(event) {
-      var cursor = event.target.result;
-      if(cursor) {
-        result.push(cursor.value);
-        cursor.continue();
-      } else {
-        defer.resolve(result);
+    transaction.oncomplete = function(event) {
+      deferTransaction.resolve(result);
+    };
+
+    transaction.onerror = function(event) {
+      deferTransaction.reject(new Error(operationError || event.target.errorCode || null));
+    };
+
+    var objectStore = transaction.objectStore(self.storeName);
+    var cursor = self.getStoreOrIndex(objectStore)
+    .openCursor();
+
+    cursor.onsuccess = function(event) {
+      var cursorResult = event.target.result;
+      if(cursorResult) {
+        result.push(cursorResult.value);
+        cursorResult.continue();
       }
     };
+
+    cursor.onerror = function(event) {
+      operationError = event.target.errorCode;
+    };
+
   });
 
-  return defer.promise;
+  return deferTransaction.promise;
 };
 
 ObjectStore.prototype.getAllKeys = function() {
   var self = this;
-  var defer = Q.defer();
+  var deferTransaction = Q.defer();
   var result = [];
+  var operationError;
 
   this.db.then(function(db) {
     var transaction = db.transaction(self.storeName);
-    var objectStore = transaction.objectStore(self.storeName);
 
-    self.getStoreOrIndex(objectStore)
-    .openCursor()
-    .onsuccess = function(event) {
-      var cursor = event.target.result;
-      if(cursor) {
-        result.push(cursor.key);
-        cursor.continue();
-      } else {
-        defer.resolve(result);
+    transaction.oncomplete = function(event) {
+      deferTransaction.resolve(result);
+    };
+
+    transaction.onerror = function(event) {
+      deferTransaction.reject(new Error(operationError || event.target.errorCode || null));
+    };
+
+    var objectStore = transaction.objectStore(self.storeName);
+    var cursor = self.getStoreOrIndex(objectStore)
+    .openCursor();
+
+    cursor.onsuccess = function(event) {
+      var cursorResult = event.target.result;
+      if(cursorResult) {
+        result.push(cursorResult.key);
+        cursorResult.continue();
       }
+    };
+
+    cursor.onerror = function(event) {
+      operationError = event.target.errorCode;
     };
   });
 
-  return defer.promise;
+  return deferTransaction.promise;
 };
 
 ObjectStore.prototype.openCursor = function(idbKeyRange, direction) {
@@ -326,6 +390,7 @@ ObjectStore.prototype.openProgressiveCursor = function(idbKeyRange, direction) {
     return countDone.promise;
   })
   .then(function(defers) {
+    // Need to create a new transaction because the previous one won't be active
     var transaction = self.db.transaction(self.storeName);
     var objectStore = transaction.objectStore(self.storeName);
 
@@ -334,7 +399,6 @@ ObjectStore.prototype.openProgressiveCursor = function(idbKeyRange, direction) {
 };
 
 var Index = function(db, storeName, indexName) {
-
   ObjectStore.call(this, db, storeName);
 
   this.indexName = indexName;
@@ -352,12 +416,13 @@ var Cursor = function(objectStore, idbKeyRange, direction) {
   var defer = Q.defer();
   var result = [];
 
-  objectStore.openCursor(idbKeyRange, direction)
-  .onsuccess = function(event) {
-    var cursor = event.target.result;
-    if(cursor) {
-      result.push({key: cursor.key, value: cursor.value});
-      cursor.continue();
+  var cursor = objectStore.openCursor(idbKeyRange, direction);
+
+  cursor.onsuccess = function(event) {
+    var cursorResult = event.target.result;
+    if(cursorResult) {
+      result.push({key: cursorResult.key, value: cursorResult.value});
+      cursorResult.continue();
     } else {
       this[Symbol.iterator] = function* () {
         var i = 0;
@@ -368,6 +433,10 @@ var Cursor = function(objectStore, idbKeyRange, direction) {
       };
       defer.resolve(this);
     }
+  };
+
+  cursor.onerror = function(event) {
+    defer.reject(new Error(event.target.errorCode || null));
   };
 
   return defer.promise;
@@ -393,11 +462,11 @@ var ProgressiveCursor = function(objectStore, idbKeyRange, direction, defers) {
 
   objectStore.openCursor(idbKeyRange, direction)
   .onsuccess = function(event) {
-    var cursor = event.target.result;
-    if(cursor) {
+    var cursorResult = event.target.result;
+    if(cursorResult) {
       var defer = defers.shift();
-      defer.resolve({key: cursor.key, value: cursor.value});
-      cursor.continue();
+      defer.resolve({key: cursorResult.key, value: cursorResult.value});
+      cursorResult.continue();
     }
   };
 
@@ -408,6 +477,7 @@ var Indexeddb = function(dbName, version, doUpgrade) {
   var openDbDeferred = Q.defer();
 
   var db = openDbDeferred.promise;
+  this.db = db;
 
   var request;
 
@@ -424,66 +494,52 @@ var Indexeddb = function(dbName, version, doUpgrade) {
     }
   };
   request.onerror = function(event) {
-    openDbDeferred.reject(
-      "Failed to open indexeddb: " + event.target.errorCode + ".");
+    openDbDeferred.reject(new Error(event.target.errorCode || null));
   };
   request.onsuccess = function(event) {
     openDbDeferred.resolve(event.target.result);
   };
 
-  this.getDb = function() {
-    return db;
-  };
-
-  this.cleanup = function() {
-    var cleanDB = function() {
-      db.done();
-      db = null
-      return null;
-    }
-    return db.then(cleanDB);
-  }
-
-  this.execTransaction = function(operations, objectStores, mode) {
-
-    var execute = function(db) {
-      var queue = Q([]);
-      var tx = db.transaction(objectStores, mode);
-
-      operations.forEach(function(operation) {
-        var deferred = Q.defer();
-        queue = queue.then(function(resultsAccumulator) {
-          resultsAccumulator.push(deferred.promise)
-          return resultsAccumulator;
-        });
-        var request = operation(tx);
-
-        if(!request) {
-          deferred.resolve(null);
-        } else if('onsuccess' in request && 'onerror' in request) {
-          request.onsuccess = function(event) {
-            //console.log('onsuccess: about to resolve '+operation.operationName+': result: '+JSON.stringify(event.target.result));
-            deferred.resolve(event.target.result);
-          };
-          request.oncomplete = function(event) {
-            //console.log('oncomplete: about to resolve '+operation.operationName+': result: '+JSON.stringify(event.target.result));
-            deferred.resolve(event.target.result);
-          };
-          request.onerror = function(event) {
-            deferred.reject(new Error('IndexedDB transaction error: ' + event.target.errorCode));
-          };
-        } else {
-          //console.log('request is result: about to resolve '+operation.operationName+': result: '+JSON.stringify(request));
-          deferred.resolve(request);
-        }
-      });
-
-      return Q.all(queue);
-    };
-
-    return db
-    .then(execute);
-  };
-
   return this;
 }
+
+Indexeddb.prototype.getDb = function() {
+  return this.db;
+};
+
+Indexeddb.prototype.execTransaction = function(operations, objectStores, mode) {
+
+  var execute = function(db) {
+    var queue = Q([]);
+    var tx = db.transaction(objectStores, mode);
+
+    operations.forEach(function(operation) {
+      var deferred = Q.defer();
+      queue = queue.then(function(resultsAccumulator) {
+        resultsAccumulator.push(deferred.promise)
+        return resultsAccumulator;
+      });
+      var request = operation(tx);
+
+      if(!request) {
+        deferred.resolve(null);
+      } else if('onsuccess' in request && 'onerror' in request) {
+        request.onsuccess = function(event) {
+          deferred.resolve(event.target.result);
+        };
+        request.oncomplete = function(event) {
+          deferred.resolve(event.target.result);
+        };
+        request.onerror = function(event) {
+          deferred.reject(new Error(event.target.errorCode || null));
+        };
+      } else {
+        deferred.resolve(request);
+      }
+    });
+
+    return Q.all(queue);
+  };
+
+  return this.db.then(execute);
+};
